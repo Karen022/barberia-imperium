@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] {
+    display: none !important;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(75%) sepia(90%) saturate(1000%) hue-rotate(5deg) brightness(105%) contrast(100%);
+    cursor: pointer;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(75%) sepia(90%) saturate(1000%) hue-rotate(5deg) brightness(105%) contrast(100%);
+    cursor: pointer;
+}
