@@ -87,18 +87,18 @@
 
             <i class="fa-solid fa-box-open w-5 text-center"></i>
 
-            <span x-show="sidebarOpen">Products</span>
+            <span x-show="sidebarOpen">Productos</span>
         </a> 
 
         @endrole
 
-        <a href="{{ route('dashboard.index') }}"
+        <!-- <a href="{{ route('dashboard.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-300 hover:bg-yellow-600 hover:text-black transition">
 
             <i class="fa-solid fa-gear w-5 text-center"></i>
 
             <span x-show="sidebarOpen">Configuracion</span>
-        </a>
+        </a> -->
 
         <a href="{{ route('profile.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-300 hover:bg-yellow-600 hover:text-black transition

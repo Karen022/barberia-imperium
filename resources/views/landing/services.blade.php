@@ -51,11 +51,13 @@
                            Duración: {{ $service->duration_min }} minutos
                         </p>
 
+                        @auth
                         <div class="flex justify-center items-center">
                             <span class="text-yellow-500  font-bold">
                                 Gs {{ number_format($service->price, 0, ',', '.') }}
                             </span>
                         </div>
+                        @endauth
 
                     </div>
 

@@ -13,7 +13,7 @@
                     📍 <span>Tavapy, Paraguay</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    📞 <span>+595 974 865-495<span>
+                    📞 <span>+595 983 176-430<span>
                 </div>
                 <div class="flex items-center gap-2">
                     ✉️ <span>imperiumbarberiia@gmail.com</span>
@@ -31,7 +31,8 @@
                 <li><a href="{{ route('landing.products') }}" class="hover:text-yellow-500 transition">Productos</a>
                 </li>
                 <li><a href="{{ route('landing.contact') }}" class="hover:text-yellow-500 transition">Contacto</a></li>
-                <li><a href="{{ route('landing.appointments.create') }}" class="hover:text-yellow-500 transition">Reservar Turno</a></li>
+                <li><a href="{{ route('landing.appointments.create') }}"
+                        class="hover:text-yellow-500 transition">Reservar Turno</a></li>
             </ul>
         </div>
 
@@ -77,14 +78,16 @@
             <h3 class="text-white font-semibold mb-4">Seguinos</h3>
 
             <div class="flex gap-4">
-                <a href="https://www.facebook.com/Imperiumbarberiia?mibextid=wwXIfr&rdid=y8i6UyAmOkdlxukx&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F19jG4ghBcv%2F%3Fmibextid%3DwwXIfr#" class="p-3 rounded-full bg-neutral-800 hover:bg-yellow-500 hover:text-black transition">
+                <a href="https://www.facebook.com/Imperiumbarberiia?mibextid=wwXIfr&rdid=y8i6UyAmOkdlxukx&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F19jG4ghBcv%2F%3Fmibextid%3DwwXIfr#"
+                    class="p-3 rounded-full bg-neutral-800 hover:bg-yellow-500 hover:text-black transition">
                     <i class="fab fa-facebook-f"></i>
                 </a>
-                <a href="https://www.instagram.com/imperiumbarberiia/" class="p-3 rounded-full bg-neutral-800 hover:bg-yellow-500 hover:text-black transition">
+                <a href="https://www.instagram.com/imperiumbarberiia/"
+                    class="p-3 rounded-full bg-neutral-800 hover:bg-yellow-500 hover:text-black transition">
                     <i class="fab fa-instagram"></i>
                 </a>
-                <!-- wa.me/+595983176430?text=Hola%252C%2520quiero%2520reservar%2520un%2520horario%2 -->
-                <a href="https:wa.me/+595983176430?text=Hola%252C%2520quiero%2520reservar%2520un%2520horario%2" class="p-3 rounded-full bg-neutral-800 hover:bg-yellow-500 hover:text-black transition">
+                <a href="https://wa.me/595983176430?text=Hola%2C%20quiero%20reservar%20un%20horario"
+                    class="p-3 rounded-full bg-neutral-800 hover:bg-yellow-500 hover:text-black transition">
                     <i class="fab fa-whatsapp"></i>
                 </a>
             </div>
