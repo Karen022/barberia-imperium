@@ -18,7 +18,7 @@ class UserSeeder extends Seeder
 
         // ADMIN PRINCIPAL
         $admin = User::updateOrCreate(
-            ['eamil' => env('ADMIN_EMAIL')],
+            ['email' => env('ADMIN_EMAIL')],
             [
                 'name' => env('ADMIN_NAME'),
                 'password' => env('ADMIN__PASSWORD'),
