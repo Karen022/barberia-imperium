@@ -21,7 +21,7 @@ class UserSeeder extends Seeder
             ['email' => env('ADMIN_EMAIL')],
             [
                 'name' => env('ADMIN_NAME'),
-                'password' => env('ADMIN__PASSWORD'),
+                'password' => env('ADMIN_PASSWORD'),
             ]
         );
 
