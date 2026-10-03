@@ -37,8 +37,16 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
+        // Obtener los datos validados
+        $data = $request->validated();
+
+        // Agregar el codigo de pais al telefono antes de guardar
+        if (!empty($data['phone'])) {
+            $data['phone'] = '595' . $data['phone'];
+        }
+
         // Actualizar los campos validados
-        $user->fill($request->validated());
+        $user->fill($data);
 
         // Si se cambió el email, marcarlo como no verificado
         if ($user->isDirty('email')) {
@@ -77,6 +85,8 @@ class ProfileController extends Controller
         // Redirigir con éxito
         return Redirect::route('profile.index')->with('success', 'Perfil actualizado correctamente.');
     }
+
+   
 
 
     /**

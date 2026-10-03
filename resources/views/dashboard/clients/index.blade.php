@@ -1,39 +1,76 @@
 @extends('dashboard.layouts.dashboard')
 
 @section('content')
-<div class="p-6 text-gray-200">
+    <div class="p-6 text-gray-200">
 
-    <h1 class="text-2xl font-bold mb-4">Clientes</h1>
+        <h1 class="text-2xl font-bold mb-4">Clientes</h1>
 
-    <div class="bg-black/40 border border-zinc-700 rounded-xl overflow-x-auto">
+        <div class="bg-black/40 border border-zinc-700 rounded-xl overflow-x-auto">
 
-        <table class="w-full">
-            <thead class="bg-zinc-900/80 text-gray-300">
-                <tr>
-                    <th class="px-4 py-3 text-left">Nombre</th>
-                    <th class="px-4 py-3 text-left">Email</th>
-                    <th class="px-4 py-3 text-left">Teléfono</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                @forelse($clients as $client)
-                    <tr class="border-t border-zinc-700">
-                        <td class="px-4 py-3">{{ $client->name }}</td>
-                        <td class="px-4 py-3">{{ $client->email }}</td>
-                        <td class="px-4 py-3">{{ $client->phone ?? '-' }}</td>
-                    </tr>
-                @empty
+            <table class="w-full">
+                <thead class="bg-zinc-900/80 text-gray-300">
                     <tr>
-                        <td colspan="3" class="px-4 py-6 text-center text-gray-400">
-                            No hay clientes registrados aún.
-                        </td>
+                        <th class="px-4 py-3 text-left">Nombre</th>
+                        <th class="px-4 py-3 text-left">Email</th>
+                        <th class="px-4 py-3 text-left">Teléfono</th>
+                        <th class="px-4 py-3 text-left">WhatsApp</th>
+                        <th class="px-4 py-3 text-left">Documento</th>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-   
+                </thead>
 
-</div>
+                <tbody>
+                    @forelse($clients as $client)
+                        <tr class="border-t border-zinc-700">
+                            <td class="px-4 py-3">{{ $client->name }}</td>
+                            <td class="px-4 py-3">{{ $client->email }}</td>
+                            <td class="px-4 py-3">
+                                @if ($client->phone)
+                                    +595 {{ substr($client->phone, 3) }}
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                @if ($client->phone)
+                                    <a
+                                        href="https://wa.me/{{ $client->phone }}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-green-600 hover:bg-green-500 text-white transition"
+                                        title="Contactar por WhatsApp"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 24 24"
+                                            fill="currentColor"
+                                            class="w-5 h-5"
+                                        >
+                                            <path d="M20.52 3.48A11.87 11.87 0 0 0 12.05 0C5.5 0 .17 5.33.17 11.88c0 2.09.55 4.13 1.6 5.93L.08 24l6.33-1.66a11.86 11.86 0 0 0 5.64 1.43h.01c6.55 0 11.88-5.33 11.88-11.88 0-3.17-1.23-6.15-3.42-8.41ZM12.06 21.77h-.01a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.76.99 1-3.66-.23-.38a9.88 9.88 0 1 1 8.39 4.64Zm5.42-7.41c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.21 5.09 4.5.71.31 1.27.49 1.71.63.72.23 1.37.2 1.89.12.58-.09 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35Z"/>
+                                        </svg>
+                                    </a>
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                @if ($client->document_type && $client->document_number)
+                                    {{ $client->document_type }} - {{ $client->formattedDocument() ?: '-' }}
+                                @else
+                                    --
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="px-4 py-6 text-center text-gray-400">
+                                No hay clientes registrados aún.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+
+    </div>
 @endsection

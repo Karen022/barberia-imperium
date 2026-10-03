@@ -12,21 +12,20 @@
             </a>
         </div>
 
-        {{-- El contenedor que ahora sí hará scroll gracias a la corrección del layout --}}
+        
         <div class="w-full bg-black/40 border border-zinc-700 rounded-2xl overflow-x-auto">
 
-            {{-- CAMBIO: table-auto con espaciados manuales --}}
+            
             <table class="w-full table-auto visual-table">
                 <thead class="bg-zinc-900/80 text-gray-300">
                     <tr>
-                        <th class="px-5 py-4 text-left whitespace-nowrap w-16">#</th>
-                        <th class="px-5 py-4 text-left min-w-[280px]">Detalle de Venta</th>
-                        <th class="px-5 py-4 text-center whitespace-nowrap w-24">Cant.</th>
-                        <th class="px-5 py-4 text-left whitespace-nowrap w-36">Total</th>
-                        {{-- MÁS ESPACIO PARA ESTAS TRES COLUMNAS --}}
-                        <th class="px-5 py-4 text-left whitespace-nowrap w-44">Fecha</th>
-                        <th class="px-5 py-4 text-left whitespace-nowrap w-52">Atendido por</th>
-                        <th class="px-5 py-4 text-left whitespace-nowrap w-52">Cliente</th>
+                        <th class="px-5 py-4 text-left">#</th>
+                        <th class="px-5 py-4 text-left ">Detalle de Venta</th>
+                        <th class="px-5 py-4 text-center">Cant.</th>
+                        <th class="px-5 py-4 text-left">Total</th>
+                        <th class="px-5 py-4 text-left">Fecha</th>
+                        <th class="px-5 py-4 text-left">Atendido por</th>
+                        <th class="px-5 py-4 text-left">Cliente</th>
                     </tr>
                 </thead>
 
@@ -34,19 +33,19 @@
                     @forelse($sales as $sale)
                         <tr class="bg-zinc-800/40 font-medium border-t border-zinc-700 hover:bg-zinc-800/70 text-gray-200 align-middle">
                             {{-- ID --}}
-                            <td class="px-5 py-4 text-amber-500 font-bold whitespace-nowrap">#{{ $sale->id }}</td>
+                            <td class="px-5 py-4 text-amber-500 font-bold ">#{{ $sale->id }}</td>
 
                             {{-- DETALLE --}}
                             <td class="px-5 py-4 text-sm text-gray-400">
                                 <div class="flex flex-wrap gap-1.5 max-w-md">
                                     @foreach($sale->saleDetails as $detail)
-                                        <span class="bg-zinc-700/50 px-2 py-1 rounded text-gray-300 border border-zinc-700/30 whitespace-nowrap">
+                                        <span class="bg-zinc-700/50 px-2 py-1 rounded text-gray-300 border border-zinc-700/30">
                                             {{ $detail->product->name ?? 'Producto eliminado' }}
                                         </span>
                                     @endforeach
 
                                     @foreach($sale->services as $service)
-                                        <span class="bg-zinc-700/50 px-2 py-1 rounded text-gray-300 border border-zinc-700/30 whitespace-nowrap">
+                                        <span class="bg-zinc-700/50 px-2 py-1 rounded text-gray-300 border border-zinc-700/30">
                                             {{ $service->name ?? 'Servicio eliminado' }}
                                         </span>
                                     @endforeach
@@ -54,7 +53,7 @@
                             </td>
 
                             {{-- CANTIDAD --}}
-                            <td class="px-5 py-4 text-sm text-center text-zinc-400 font-mono whitespace-nowrap">
+                            <td class="px-5 py-4 text-sm text-center text-zinc-400 font-mono">
                                 <div class="flex flex-col gap-1">
                                     @foreach($sale->saleDetails as $detail)
                                         <div>{{ $detail->quantity }}</div>

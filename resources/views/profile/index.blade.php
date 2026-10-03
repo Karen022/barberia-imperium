@@ -5,7 +5,7 @@
 )
 
 @section('content')
-    
+
 
     <div class="p-6 text-gray-200">
 
@@ -30,8 +30,24 @@
 
             <div>
                 <span class="text-gray-400 text-sm">Teléfono</span>
-                <p class="text-lg">{{  auth()->user()->phone ?: '--' }}</p>
+                <p class="text-lg">
+                    @if (auth()->user()->phone)
+                        +595 {{ substr(auth()->user()->phone, 3) }}
+                    @else
+                        --
+                    @endif
+                </p>
+            </div>
 
+            <div>
+                <span class="text-gray-400 text-sm">Documento</span>
+                <p class="text-lg">
+                    @if (auth()->user()->document_type && auth()->user()->document_number)
+                        {{ auth()->user()->document_type }} - {{ auth()->user()->formattedDocument() ?: '--' }}
+                    @else
+                        --
+                    @endif
+                </p>
             </div>
 
             <a href="{{ route('profile.edit') }}"

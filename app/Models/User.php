@@ -23,6 +23,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'phone',
+        'document_type',
+        'document_number',
         'password',
         'role',
         'status',
@@ -65,5 +67,27 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function cashRegister(){
         return $this->hasMany(CashRegister::class);
+    }
+
+     public function formattedDocument() : ?string
+    {
+        if (!$this->document_type || !$this->document_number) {
+            return null;
+        }
+
+        $number = $this->document_number;
+
+        if ($this->document_type === 'CI') {
+            return number_format((int) $number, 0, '', '.');
+        }
+
+        if ($this->document_type === 'RUC'){
+            if (strlen($number) < 2) {
+                return $number;
+            }
+
+            return substr($number, 0, -1) . '-' . substr($number, -1);
+        }
+
     }
 }

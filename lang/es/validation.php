@@ -7,6 +7,8 @@ return [
     'email' => 'El campo :attribute debe ser una dirección de correo electrónico válida.',
     'numeric' => 'El campo :attribute debe ser un número.',
     'integer' => 'El campo :attribute debe ser un número entero.',
+    'regex' => 'El campo :attribute tiene un formato inválido.',
+    'in' => 'El valor seleccionado para :attribute no es válido.',
     'min' => [
         'numeric' => 'El campo :attribute debe ser como mínimo :min.',
         'integer' => 'El campo :attribute debe ser como mínimo :min.',
@@ -23,12 +25,15 @@ return [
 
     'attributes' => [
         'name' => 'nombre',
+        'phone' => 'teléfono',
         'description' => 'descripción',
         'price' => 'precio',
         'stock' => 'cantidad',
         'image' => 'imagen',
         'email' => 'correo electrónico',
         'password' => 'contraseña',
+        'document_type' => 'tipo de documento',
+        'document_number' => 'número de documento',
     ],
 
 ];

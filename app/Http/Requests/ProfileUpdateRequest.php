@@ -28,8 +28,10 @@ class ProfileUpdateRequest extends FormRequest
             'phone' => [
                 'nullable', 
                 'string', 
-                'regex:/^09[6-9][1-6]\d{6}|\+5959[6-9][1-6]\d{6}$/' //Formatos para numeros paraguayos
+                'regex:/^9[6-9][1-6]\d{6}$/'
             ],
+            'document_type' => ['nullable', 'in:CI,RUC'],
+            'document_number' => ['nullable', 'string', 'regex:/^\d+$/','max:20'],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'profile_image' => ['nullable', 'image', 'max:2048'],
         ];

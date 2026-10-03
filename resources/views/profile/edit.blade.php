@@ -72,10 +72,63 @@
                             Teléfono
                         </label>
 
-                        <input type="text" name="phone" id="phone" value="{{ old('phone', $user->phone) }}"
-                            class="w-full rounded-lg bg-neutral-900 border border-neutral-700 text-neutral-100 px-4 py-2 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500">
+                        <div class="flex">
+                            <span
+                                class="inline-flex items-center px-4 rounded-l-lg bg-neutral-800 border border-r-0 border-neutral-700 text-gray-300">
+                                +595
+                            </span>
 
+                            <input type="text" name="phone" id="phone"
+                                value="{{ old('phone', $user->phone ? substr($user->phone, 3) : '') }}" maxlength="9"
+                                inputmode="numeric" placeholder="981234567"
+                                class="w-full rounded-r-lg bg-neutral-900 border border-neutral-700 text-neutral-100 px-4 py-2 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500">
+                        </div>
                         @error('phone')
+                            <p class="mt-1 text-sm text-red-400">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                    <!-- Tipo de Documento -->
+                    <div class="mb-6">
+                        <label for="document_type" class="block text-sm text-gray-300">
+                            Tipo de Documento
+                        </label>
+
+                        <select 
+                            name="document_type" 
+                            id="document_type"
+                            class="w-full bg-neutral-900 rounded-lg border border-neutral-700 text-neutral-100 px-4 py-2 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500"
+                        >
+                            <option value="">Seleccionar</option>
+
+                            <option value="CI" {{ old('document_type', $user->document_type) == 'CI' ? 'selected' : '' }}>
+                                C.I.
+                            </option>
+
+                            <option value="RUC" {{ old('document_type', $user->document_type) == 'RUC' ? 'selected' : '' }}>
+                                RUC
+                            </option>
+                        </select>
+                        @error('document_type')
+                            <p class="mt-1 text-sm text-red-400">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                    <!-- Número de Documento -->
+                    <div class="mb-6">
+                        <label for="document_number" class="block text-sm text-gray-300">
+                            Número de Documento
+                        </label>
+
+                        <input type="text" name="document_number" id="document_number"
+                            value="{{ old('document_number', $user->document_number) }}"
+                            class="w-full rounded-lg bg-neutral-900 border border-neutral-700 text-neutral-100 px-4 py-2 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500"
+                        >
+                        @error('document_number')
                             <p class="mt-1 text-sm text-red-400">
                                 {{ $message }}
                             </p>
