@@ -49,57 +49,74 @@
                             <td class="px-4 py-3 text-left">{{ $appointment->service?->name ?? 'Sin servicio' }}</td>
                             <td class="px-4 py-3 text-left">
                                 <span class="px-3 py-1 rounded-full text-xs font-semibold
-                                                @if($appointment->status === 'pending') bg-yellow-600/20 text-yellow-400
-                                                @elseif($appointment->status === 'completed') bg-green-600/20 text-green-400
-                                                @else bg-red-400 
+                                                @if($appointment->status === 'pending') text-yellow-400
+                                                @elseif($appointment->status === 'completed') text-green-400
+                                                @else text-red-400 
                                                 @endif">
                                     {{ ucfirst($appointment->status) }}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-left">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    {{-- Editar completo (admin) --}}
+                                    @role('admin')
+                                    <a href="{{ route('dashboard.appointments.edit', $appointment) }}"
+                                        class="border border-yellow-600 hover:bg-yellow-600/30 text-yellow-600 px-5 py-3 rounded-xl font-semibold">
+                                        Editar
+                                    </a>
+                                    @endrole
 
-                                {{-- Editar completo (admin) --}}
-                                @role('admin')
-                                <a href="{{ route('dashboard.appointments.edit', $appointment) }}"
-                                    class="text-yellow-500 hover:underline">
-                                    Editar
-                                </a>
-                                @endrole
+                                    {{-- Acciones rápidas --}}
+                                    @if(
+                                            $appointment->status === 'pending' &&
+                                            (auth()->user()->hasRole('admin') || auth()->id() === $appointment->barber_id)
+                                        )
 
-                                {{-- Acciones rápidas --}}
-                                @if(
-                                        $appointment->status === 'pending' &&
-                                        (auth()->user()->hasRole('admin') || auth()->id() === $appointment->barber_id)
-                                    )
+                                        {{-- Completar --}}
+                                        <form
+                                            method="POST"
+                                            action="{{ route('dashboard.appointments.status', [$appointment, 'completed']) }}"
+                                            class="inline"
+                                        >
+                                            @csrf
+                                            @method('PATCH')
 
-                                    {{-- Completar --}}
-                                    <form method="POST"
-                                        action="{{ route('dashboard.appointments.status', [$appointment, 'completed']) }}"
-                                        class="inline">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button class="text-green-400 hover:underline">
-                                            Completar
-                                        </button>
-                                    </form>
+                                            <button
+                                                type="submit"
+                                                class="border border-green-600/30 text-green-400 hover:bg-green-600/30 px-5 py-3 rounded-xl font-semibold inline-flex items-center justify-center transition"
+                                                title="Completar turno"
+                                            >
+                                                Completar
+                                            </button>
+                                        </form>
 
-                                    {{-- Cancelar --}}
-                                    <form method="POST"
-                                        action="{{ route('dashboard.appointments.status', [$appointment, 'cancelled']) }}"
-                                        class="inline">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button class="text-red-400 hover:underline">
-                                            Cancelar
-                                        </button>
-                                    </form>
 
-                                @endif
+                                        {{-- Cancelar --}}
+                                        <form
+                                            method="POST"
+                                            action="{{ route('dashboard.appointments.status', [$appointment, 'cancelled']) }}"
+                                            class="inline"
+                                        >
+                                            @csrf
+                                            @method('PATCH')
+
+                                            <button
+                                                type="submit"
+                                                class="border border-red-600/30 text-red-400 hover:bg-red-600/30 px-5 py-3 rounded-xl font-semibold inline-flex items-center justify-center transition"
+                                                title="Cancelar turno"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        </form>
+
+                                    @endif
+                                </div>
+                            </td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="5" class="text-center text-zinc-500 text-xs py-4">
-                                (No hay registros aún?dashboard)
+                                (No hay registros aún)
                             </td>
                         </tr>
                     @endforelse

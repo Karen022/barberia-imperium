@@ -52,11 +52,11 @@ Route::middleware(['auth', 'role:admin|barber'])
         Route::resource('sales', SaleController::class);
         
     
-        /*
-        |--------------------------------------------------------------------------
-        | Rutas SOLO para admin
-        |--------------------------------------------------------------------------
-        */
+    /*
+    |--------------------------------------------------------------------------
+    | Rutas SOLO para admin
+    |--------------------------------------------------------------------------
+    */
         
     Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(function () {
         // Listado de usuarios
@@ -67,7 +67,7 @@ Route::middleware(['auth', 'role:admin|barber'])
         Route::get('barbers/create', [UserController::class, 'createBarber'])->name('barbers.create');
         Route::post('barbers/store', [UserController::class, 'storeBarber'])->name('barbers.store');
         Route::patch('barbers/{user}/toggleStatus', [UserController::class, 'toggleStatus'])->name('barbers.toggleStatus');
-
+        Route::patch('sales/{sale}/cancel', [SaleController::class, 'cancel'])->name('sales.cancel');
         Route::resource('cash', CashRegisterController::class);
 
         Route::resource('products', ProductController::class);

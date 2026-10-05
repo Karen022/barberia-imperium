@@ -57,7 +57,7 @@
                                     message="Esta acción eliminará el servicio permanentemente.">
                                     <x-slot:trigger>
                                         <span
-                                            class="bg-yellow-600 hover:bg-yellow-500 text-black px-5 py-3 rounded-xl font-semibold inline-flex items-center justify-center cursor-pointer">
+                                            class="bg-red-600/70 hover:bg-red-500 text-black px-5 py-3 rounded-xl font-semibold inline-flex items-center justify-center cursor-pointer">
                                             <i class="fa-solid fa-trash"></i>
                                         </span>
                                     </x-slot:trigger>

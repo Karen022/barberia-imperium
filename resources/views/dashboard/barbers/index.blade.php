@@ -34,11 +34,11 @@
                             <td class="px-4 py-3">{{ $barber->email }}</td>
                             <td class="px-4 py-3">
                                 @if ($barber->status === 'active')
-                                    <span class="px-3 py-1 rounded-full text-sm bg-green-600/20 text-green-400">
+                                    <span class="px-3 py-1 text-sm  text-green-400">
                                         Activo
                                     </span>
                                 @else
-                                    <span class="px-3 py-1 rounded-full text-sm bg-red-600/20 text-red-400">
+                                    <span class="px-3 py-1 text-sm  text-red-400">
                                         Inactivo
                                     </span>
                                 @endif
@@ -50,12 +50,12 @@
 
                                     @if ($barber->status === 'active')
                                         <button type="submit"
-                                            class="bg-red-600/20 text-red-400 hover:bg-red-600/30 px-3 py-1.5 rounded-lg text-sm font-medium transition">
+                                            class="border border-red-600/30 text-red-400 hover:bg-red-600/30 px-3 py-1.5 rounded-lg text-sm font-medium transition">
                                             Desactivar
                                         </button>
                                     @else
                                         <button type="submit"
-                                            class="bg-green-600/20 text-green-400 hover:bg-green-600/30 px-3 py-1.5 rounded-lg text-sm font-medium transition">
+                                            class="border border-green-600/30 text-green-400 hover:bg-green-600/30 px-3 py-1.5 rounded-lg text-sm font-medium transition">
                                             Activar
                                         </button>
                                     @endif

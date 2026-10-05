@@ -70,6 +70,7 @@ class SaleController extends Controller
                 'client_id' => $request->input('client_id'),
                 'payment_method' => $request->input('payment_method'),
                 'total' => 0,
+                'status' => 'completed',
             ]);
 
             $total = 0;
@@ -157,17 +158,159 @@ class SaleController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Sale $sale)
     {
-        //
+        $sale->load([
+            'saleDetails.product',
+            'services',
+            'client',
+        ]);
+
+        $products = Product::orderBy('name')->get();
+
+        $services = Service::orderBy('name')->get();
+
+        $clients = User::role('client')
+                ->orderBy('name')
+                ->get();
+
+        return view('dashboard.sales.edit', compact(
+            'sale',
+            'products',
+            'services',
+            'clients'
+        ));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+ public function update(Request $request, Sale $sale)
+{
+    if ($sale->status !== 'completed') {
+        return redirect()
+            ->route('dashboard.sales.index')
+            ->withErrors([
+                'update' => 'No se puede editar una venta anulada.',
+            ]);
+    }
+
+    $validated = $request->validate([
+        'client_id' => 'nullable|exists:users,id',
+
+        'items' => 'required|array|min:1',
+
+        'items.*.type' => 'required|in:product',
+
+        'items.*.id' => 'required|integer|exists:products,id',
+
+        'items.*.quantity' => 'required|integer|min:1',
+    ]);
+
+    try {
+
+        DB::transaction(function () use ($sale, $validated) {
+   
+            //Cargar detalles anteriores
+            $sale->load('saleDetails.product');
+
+
+            //Restaurar stock anterior
+            foreach ($sale->saleDetails as $detail) {
+
+                $detail->product->increment(
+                    'stock',
+                    $detail->quantity
+                );
+            }
+
+            //Eliminar detalles anteriores
+            $sale->saleDetails()->delete();
+
+
+            //Crear nuevos detalles
+            $total = 0;
+
+            foreach ($validated['items'] as $item) {
+
+                $product = Product::findOrFail($item['id']);
+
+                //Verificar stock
+                if ($product->stock < $item['quantity']) {
+
+                    throw new \Exception(
+                        "No tenemos suficiente stock de {$product->name}."
+                    );
+                }
+
+                //Calcular subtotal
+
+                $subtotal = $product->price * $item['quantity'];
+                
+                // Crear detalle
+                $sale->saleDetails()->create([
+                    'product_id' => $product->id,
+                    'quantity' => $item['quantity'],
+                    'subtotal' => $subtotal,
+                ]);
+
+                //Descontar stock
+                $product->decrement(
+                    'stock',
+                    $item['quantity']
+                );
+
+                $total += $subtotal;
+            }
+
+
+            //Actualizar venta
+
+            $sale->update([
+                'client_id' => $validated['client_id'] ?? null,
+                'total' => $total,
+            ]);
+        });
+
+        return redirect()
+            ->route('dashboard.sales.index')
+            ->with('success', 'Venta actualizada correctamente.');
+
+    } catch (\Throwable $e) {
+
+        return back()
+            ->withErrors([
+                'error' => 'Error al actualizar la venta: ' . $e->getMessage(),
+            ])
+            ->withInput();
+    }
+}
+    
+
+
+    public function cancel(Sale $sale)
     {
-        //
+        if ($sale->status === 'cancelled') {
+            return back()->withErrors(['cancel' => 'Esta venta ya ha sido anulada.']);
+        }
+
+
+        DB::transaction(function () use ($sale) {
+
+            $sale->load('saleDetails');
+
+            foreach ($sale->saleDetails as $detail) {
+                $detail->product->increment('stock', $detail->quantity);
+            }
+
+            $sale->update([
+                'status' => 'cancelled',
+            ]);
+        });
+
+        return redirect()
+            ->route('dashboard.sales.index')
+            ->with('success', 'Venta anulada correctamente.');
     }
 
     /**
