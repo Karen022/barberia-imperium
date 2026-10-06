@@ -44,11 +44,11 @@ Route::middleware(['auth', 'role:admin|barber'])
 
         Route::get('/', [DashboardController::class, 'index'])->name('index');
 
-        Route::resource('services', ServiceController::class);
-
+        Route::get('clients', [UserController::class, 'clients'])->name('clients.index');
         Route::resource('appointments', AppointmentController::class);
         Route::patch('appointments/{appointment}/status/{status}', [AppointmentController::class, 'updateStatus'])->name('appointments.status');
-
+        Route::post('appointments/unavailabilities', [AppointmentController::class, 'storeUnavailability'])->name('appointments.unavailability.store');
+        Route::delete('appointments/unavailabilities/{unavailability}', [AppointmentController::class, 'destroyUnavailability'])->name('appointments.unavailability.destroy');
         Route::resource('sales', SaleController::class);
         
     
@@ -61,8 +61,8 @@ Route::middleware(['auth', 'role:admin|barber'])
     Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(function () {
         // Listado de usuarios
         Route::resource('users', UserController::class);
-
-        Route::get('clients', [UserController::class, 'clients'])->name('clients.index');
+        Route::resource('services', ServiceController::class);
+        
         Route::get('barbers', [UserController::class, 'barbers'])->name('barbers.index');
         Route::get('barbers/create', [UserController::class, 'createBarber'])->name('barbers.create');
         Route::post('barbers/store', [UserController::class, 'storeBarber'])->name('barbers.store');

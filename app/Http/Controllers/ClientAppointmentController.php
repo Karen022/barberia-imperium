@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BarberUnavailability;
 use App\Models\Service;
 use App\Models\Appointment;
 use App\Models\User;
@@ -36,26 +37,40 @@ class ClientAppointmentController extends Controller
 
     public function availableSlots(Request $request)
     {
-
         $now = Carbon::now();
 
         $request->validate([
             'date' => 'required|date',
-            'service_id' => 'required|exists:services,id',
+            'service_ids' => 'nullable|array|min:1',
+            'service_ids.*' => 'integer|exists:services,id',
+            'service_id' => 'nullable|exists:services,id',
             'barber_id' => 'nullable|exists:users,id',
         ]);
 
         $date = Carbon::parse($request->date);
-        $service = Service::findOrFail($request->service_id);
-        $duration = $service->duration_min;
+
+        // Servicios seleccionados
+
+        if ($request->filled('service_ids')) {
+            $services = Service::whereIn('id', $request->service_ids)->get();
+        } elseif ($request->filled('service_id')) {
+            $services = Service::where('id', $request->service_id)->get();
+        } else {
+            return response()->json([]);
+        }
+
+        $duration = $services->sum('duration_min');
 
         $startDay = $date->copy()->setTime(9, 0);
         $endDay = $date->copy()->setTime(20, 0);
 
-        $interval = 40;
+        $interval = 30;
         $slots = [];
 
-        $appointmentsQuery = Appointment::whereDate('scheduled_at', $date)->where('status', '!=', 'cancelled');
+        // Turnos existentes
+        $appointmentsQuery = Appointment::with('services')
+            ->whereDate('scheduled_at', $date)
+            ->where('status', '!=', 'cancelled');
 
         if ($request->filled('barber_id')) {
             $appointmentsQuery->where('barber_id', $request->barber_id);
@@ -63,7 +78,26 @@ class ClientAppointmentController extends Controller
 
         $appointments = $appointmentsQuery->get();
 
-        for ($time = $startDay->copy(); $time->lt($endDay); $time->addMinutes($interval)) {
+        // Indisponibilidades del barbero
+
+        $unavailabilities = collect();
+
+        if ($request->filled('barber_id')) {
+            $unavailabilities = BarberUnavailability::where(
+                'barber_id',
+                $request->barber_id
+            )
+                ->where('start_time', '<', $endDay)
+                ->where('end_time', '>', $startDay)
+                ->get();
+        }
+
+        // Generar horarios
+        for (
+            $time = $startDay->copy();
+            $time->lt($endDay);
+            $time->addMinutes($interval)
+        ) {
             $slotStart = $time->copy();
             $slotEnd = $slotStart->copy()->addMinutes($duration);
 
@@ -73,15 +107,39 @@ class ClientAppointmentController extends Controller
 
             $available = true;
 
+            // Comprobar turnos existentes
+
             foreach ($appointments as $appointment) {
                 $apptStart = Carbon::parse($appointment->scheduled_at);
-                $apptEnd = $apptStart->copy()->addMinutes($appointment->service->duration_min);
+
+                $apptDuration = $appointment->services->sum(
+                    'duration_min'
+                );
+
+                $apptEnd = $apptStart->copy()->addMinutes($apptDuration);
 
                 if ($slotStart < $apptEnd && $slotEnd > $apptStart) {
                     $available = false;
                     break;
                 }
             }
+
+            // Comprobar indisponibilidades del barbero
+
+            if ($available) {
+                foreach ($unavailabilities as $unavailability) {
+
+                    if (
+                        $slotStart < $unavailability->end_time &&
+                        $slotEnd > $unavailability->start_time
+                    ) {
+                        $available = false;
+                        break;
+                    }
+                }
+            }
+
+            // No mostrar horarios pasados
 
             if ($date->isToday() && $slotStart->lte($now)) {
                 $available = false;
@@ -94,58 +152,91 @@ class ClientAppointmentController extends Controller
         }
 
         return response()->json($slots);
-
     }
 
     /**
      * Store a newly created resource in storage.
      */
+
     public function store(Request $request)
     {
-        $request->validate([
-            'service_id' => 'required|exists:services,id',
-            'barber_id' => 'nullable|exists:users,id',
-            'scheduled_at' => 'required|date',
+        $validated = $request->validate([
+            'service_ids' => ['required', 'array', 'min:1'],
+            'service_ids.*' => ['integer', 'exists:services,id'],
+            'barber_id' => ['nullable', 'exists:users,id'],
+            'scheduled_at' => ['required', 'date'],
         ]);
 
         $clientId = auth()->id();
-        $service = Service::findOrFail($request->service_id);
-        $duration = $service->duration_min;
 
-        $start = Carbon::parse($request->scheduled_at);
-        $end = $start->copy()->addMinutes($duration);
+        $services = Service::whereIn('id', $validated['service_ids'])->get();
 
-        // No permitir turnos en el pasado  
+        $totalDuration = $services->sum('duration_min');
+
+        $start = Carbon::parse($validated['scheduled_at']);
+        $end = $start->copy()->addMinutes($totalDuration);
+
         if ($start->lte(Carbon::now())) {
-            return back()->withErrors(['scheduled_at' => 'No podés reservar turnos en el pasado.']);
+            return back()
+                ->withErrors([
+                    'scheduled_at' => 'No podés reservar turnos en el pasado.'
+                ])
+                ->withInput();
         }
 
-        // Si el usuario no elige barbero, asignar uno disponible
+       
+        // Buscar barber
         if ($request->filled('barber_id')) {
+
             $barberId = $request->barber_id;
+
         } else {
-            $barbers = User::role('barber')
-                ->with([
-                    'appointmentsAsBarber' => function ($q) use ($start) {
-                        $q->where('status', '!=', 'cancelled')
-                            ->whereDate('scheduled_at', $start->toDateString())
-                            ->with('service');
-                    }
-                ])
-                ->get();
+
+            $barbers = User::role('barber')->get();
 
             $barberId = null;
 
             foreach ($barbers->shuffle() as $barber) {
 
+                // Verificar horarios bloqueados
+
+                $hasUnavailability = BarberUnavailability::where(
+                    'barber_id',
+                    $barber->id
+                )
+                    ->where('start_time', '<', $end)
+                    ->where('end_time', '>', $start)
+                    ->exists();
+
+                if ($hasUnavailability) {
+                    continue;
+                }
+
+                // Verificar otros turnos
+
+                $appointments = Appointment::with('services')
+                    ->where('barber_id', $barber->id)
+                    ->where('status', '!=', 'cancelled')
+                    ->whereDate('scheduled_at', $start->toDateString())
+                    ->get();
+
                 $hasConflict = false;
 
-                foreach ($barber->appointmentsAsBarber as $appt) {
+                foreach ($appointments as $appointment) {
 
-                    $apptStart = Carbon::parse($appt->scheduled_at);
-                    $apptEnd = $apptStart->copy()->addMinutes($appt->service->duration_min);
+                    $appointmentStart = Carbon::parse($appointment->scheduled_at);
 
-                    if ($start < $apptEnd && $end > $apptStart) {
+                    $appointmentDuration = $appointment->services
+                        ->sum('duration_min');
+
+                    $appointmentEnd = $appointmentStart
+                        ->copy()
+                        ->addMinutes($appointmentDuration);
+
+                    if (
+                        $start < $appointmentEnd &&
+                        $end > $appointmentStart
+                    ) {
                         $hasConflict = true;
                         break;
                     }
@@ -158,37 +249,95 @@ class ClientAppointmentController extends Controller
             }
 
             if (!$barberId) {
-                return back()->withErrors(['scheduled_at' => 'No hay barberos disponibles en ese horario.']);
+                return back()
+                    ->withErrors([
+                        'scheduled_at' => 'No hay barberos disponibles en ese horario.'
+                    ])
+                    ->withInput();
             }
         }
 
-        // Verificar conflictos de horario
-        $conflicts = Appointment::where('barber_id', $barberId)
+        // Verificar disponibilidad del barbero elegido
+
+        $hasUnavailability = BarberUnavailability::where(
+            'barber_id',
+            $barberId
+        )
+            ->where('start_time', '<', $end)
+            ->where('end_time', '>', $start)
+            ->exists();
+
+        if ($hasUnavailability) {
+            return back()
+                ->withErrors([
+                    'scheduled_at' => 'El barbero no está disponible durante todo ese horario.'
+                ])
+                ->withInput();
+        }
+
+        //  Verificar conflictos con otros turnos
+
+        $appointments = Appointment::with('services')
+            ->where('barber_id', $barberId)
             ->where('status', '!=', 'cancelled')
-            ->whereDate('scheduled_at', $start->toDateString())->get();
+            ->whereDate('scheduled_at', $start->toDateString())
+            ->get();
 
-        foreach ($conflicts as $appt) {
-            $apptStart = Carbon::parse($appt->scheduled_at);
-            $apptEnd = $apptStart->copy()->addMinutes($appt->service->duration_min);
+        foreach ($appointments as $appointment) {
 
-            if ($start < $apptEnd && $end > $apptStart) {
-                return back()->withErrors(['scheduled_at' => 'Este horario ya no está disponible']);
+            $appointmentStart = Carbon::parse($appointment->scheduled_at);
+
+            $appointmentDuration = $appointment->services
+                ->sum('duration_min');
+
+            $appointmentEnd = $appointmentStart
+                ->copy()
+                ->addMinutes($appointmentDuration);
+
+            if (
+                $start < $appointmentEnd &&
+                $end > $appointmentStart
+            ) {
+                return back()
+                    ->withErrors([
+                        'scheduled_at' => 'Este horario ya no está disponible.'
+                    ])
+                    ->withInput();
             }
         }
+
+        // Crear turno
 
         $barber = User::findOrFail($barberId);
 
-        Appointment::create([
+        $appointment = Appointment::create([
             'client_id' => $clientId,
             'barber_id' => $barberId,
-            'service_id' => $service->id,
             'scheduled_at' => $start->format('Y-m-d H:i:s'),
             'status' => 'pending',
         ]);
 
-        return redirect()->route('landing.appointments.create')->with('success', 'Tu turno fue reservado con éxito. Te atenderá ' . $barber->name . '.');
+        // Guardar servicios del turno
+        $appointment->services()->attach(
+            $services->mapWithKeys(function ($service) {
+                return [
+                    $service->id => [
+                        'price' => $service->price,
+                    ],
+                ];
+            })->toArray()
+        );
 
+        return redirect()
+            ->route('landing.appointments.create')
+            ->with(
+                'success',
+                'Tu turno fue reservado con éxito. Te atenderá ' .
+                $barber->name .
+                '.'
+            );
     }
+
 
     public function myAppointments()
     {

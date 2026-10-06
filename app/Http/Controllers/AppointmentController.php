@@ -6,6 +6,7 @@ use App\Models\Appointment;
 use App\Models\Service;
 use App\Models\User;
 use App\Models\Sale;
+use App\Models\BarberUnavailability;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +25,7 @@ class AppointmentController extends Controller
     }
     public function index(Request $request)
     {
-        $query = Appointment::with(['client', 'barber', 'service'])
+        $query = Appointment::with(['client', 'barber', 'services'])
             ->orderBy('scheduled_at');
 
         // Los barberos solo pueden ver sus propios turnos
@@ -43,7 +44,14 @@ class AppointmentController extends Controller
 
         $appointments = $query->get();
 
-        return view('dashboard.appointments.index', compact('appointments'));
+        $barbers = User::role('barber')->orderBy('name')->get();
+
+        $unavailabilities = BarberUnavailability::with('barber')
+            ->whereDate('start_time', '>=', Carbon::now()->startOfDay())
+            ->orderBy('start_time')
+            ->get();
+
+        return view('dashboard.appointments.index', compact('appointments', 'barbers', 'unavailabilities'));
     }
 
 
@@ -63,46 +71,92 @@ class AppointmentController extends Controller
      */
     public function store(Request $request)
     {
-
+     
         $validated = $request->validate([
             'client_id' => 'required|exists:users,id',
             'barber_id' => 'required|exists:users,id',
-            'service_id' => 'required|exists:services,id',
+            'service_ids' => 'required|array| min:1',
+            'service_ids.*' => 'integer|exists:services,id',
             'scheduled_at' => 'required|date_format:Y-m-d\TH:i',
         ]);
+        
 
         try {
             //  Obtener duración del servicio
-            $service = Service::findOrFail($validated['service_id']);
+            $services = Service::whereIn('id', $validated['service_ids'])->get();
+            $totalDuration = $services->sum('duration_min');
             $start = Carbon::createFromFormat('Y-m-d\TH:i', $validated['scheduled_at']);
-            $end = (clone $start)->addMinutes($service->duration_min ?? 30);
+            $end = $start->copy()->addMinutes($totalDuration);
 
-            //  Comprobar solapamiento con otros turnos del mismo barbero
-            $conflict = Appointment::where('barber_id', $validated['barber_id'])
-                ->where('status', '!=', 'cancelled')
-                ->where(function ($q) use ($start, $end) {
-                    $q->whereBetween('scheduled_at', [$start, $end->subSecond()])
-                        ->orWhereRaw("ADDTIME(scheduled_at, SEC_TO_TIME((SELECT COALESCE(duration_min,0) FROM services WHERE services.id = appointments.service_id) * 60)) > ? AND scheduled_at < ?", [
-                            $start->format('Y-m-d H:i:s'),
-                            $end->format('Y-m-d H:i:s')
-                        ]);
-                })->exists();
+            // Verificar horario bloqueado del barbero
+            $hasUnavailability = BarberUnavailability::where(
+                'barber_id',
+                $validated['barber_id']
+            )
+                ->where('start_time', '<', $end)
+                ->where('end_time', '>', $start)
+                ->exists();
 
-            if ($conflict) {
+            if ($hasUnavailability) {
                 return back()
                     ->withErrors([
-                        'scheduled_at' => 'El barbero ya tiene un turno en ese horario.'
+                        'scheduled_at' =>
+                            'El barbero ya no está disponible durante todo ese horario.'
                     ])->withInput();
             }
 
+            //  Verificar conflictos con otros turnos del mismo barbero
+            $appointments = Appointment::with('services')
+                ->where('barber_id', $validated['barber_id'])
+                ->where('status', '!=', 'cancelled')
+                ->whereDate('scheduled_at', $start->toDateString())
+                ->get();
+
+            foreach ($appointments as $appointment) {
+
+                $appointmentStart = Carbon::parse(
+                    $appointment->scheduled_at
+                );
+
+                $appointmentDuration = $appointment->services
+                    ->sum('duration_min');
+
+                $appointmentEnd = $appointmentStart
+                    ->copy()
+                    ->addMinutes($appointmentDuration);
+
+                if (
+                    $start < $appointmentEnd &&
+                    $end > $appointmentStart
+                ) {
+                    return back()
+                        ->withErrors([
+                            'scheduled_at' =>
+                                'Este horario ya no está disponible para el barbero seleccionado.'
+                        ])
+                        ->withInput();
+                }
+            }
+
+
             //  Crear turno (datetime estándar)
-            Appointment::create([
+            $appointment = Appointment::create([
                 'client_id' => $validated['client_id'],
                 'barber_id' => $validated['barber_id'],
-                'service_id' => $validated['service_id'],
                 'scheduled_at' => $start->format('Y-m-d H:i:s'),
                 'status' => 'pending',
             ]);
+
+            // Guardar servicios del turno
+            $appointment->services()->attach(
+                $services->mapWithKeys(function ($service) {
+                    return [
+                        $service->id => [
+                            'price' => $service->price,
+                        ],
+                    ];
+                })->toArray()
+            );
             return redirect()
                 ->route('dashboard.appointments.index')
                 ->with('success', 'Agendamiento creado');
@@ -149,7 +203,8 @@ class AppointmentController extends Controller
         $validated = $request->validate([
             'client_id' => 'required|exists:users,id',
             'barber_id' => 'required|exists:users,id',
-            'service_id' => 'required|exists:services,id',
+            'service_id' => 'required|array, min:1',
+            'service_ids.*' => 'integer|exists:services,id',
             'scheduled_at' => 'required|date_format:Y-m-d\TH:i',
             'status' => 'required|in:pending,completed,cancelled',
         ]);
@@ -291,6 +346,33 @@ class AppointmentController extends Controller
                 'No se pudo actualizar el estado del turno. Inténtalo nuevamente.'
             );
         }
+    }
+
+    public function storeUnavailability(Request $request)
+    {
+        $validated = $request->validate([
+            'barber_id' => 'required|exists:users,id',
+            'start_time' => 'required|date',
+            'end_time' => 'required|date|after:start_time',
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        BarberUnavailability::create($validated);
+
+        return back()->with(
+            'success',
+            'Horario bloqueado correctamente.'
+        );
+    }
+
+    public function destroyUnavailability(BarberUnavailability $unavailability)
+    {
+        $unavailability->delete();
+
+        return back()->with(
+            'success',
+            'Horario desbloqueado correctamente.'
+        );
     }
 
     /**

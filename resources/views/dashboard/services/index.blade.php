@@ -43,7 +43,7 @@
                             </td>
                             <td class="px-4 py-3">{{ $service->name }}</td>
                             <td class="px-4 py-3">Gs {{ number_format($service->price, 0, ',', '.') }}</td>
-                            <td class="px-4 py-3 text-center">{{ $service->duration_min }} min</td>
+                            <td class="px-4 py-3">{{ $service->duration_min }} min</td>
                             <td class="px-4 py-3">{{ $service->description }}</td>
                             <td class="px-4 py-3">
                                 <a href="{{ route('dashboard.services.edit', $service) }}"

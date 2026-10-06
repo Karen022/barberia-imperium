@@ -45,7 +45,6 @@
             <span x-show="sidebarOpen">Registrar Venta</span>
         </a>
 
-        @role('admin')
         <a href="{{ route('dashboard.clients.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-300 hover:bg-yellow-600 hover:text-black transition
                 {{ request()->routeIs('dashboard.clients.index') ? 'bg-yellow-600 text-black' : 'text-zinc-300 hover-bg-yellow-600 hover:text-black' }}">
@@ -54,11 +53,12 @@
 
             <span x-show="sidebarOpen">Clientes</span>
         </a>
+        
+
+        @role('admin')
         <a href="{{ route('dashboard.barbers.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-300 hover:bg-yellow-600 hover:text-black transition
                 {{ request()->routeIs('dashboard.barbers.index') ? 'bg-yellow-600 text-black' : 'text-zinc-300 hover-bg-yellow-600 hover:text-black' }}">
-
-            
             <i class="fa-solid fa-user w-5 text-center"></i>
             <span x-show="sidebarOpen">Barberos</span>
         </a>

@@ -52,7 +52,7 @@
                         <div>
                             <h3 class="font-semibold">Email</h3>
                             <p class="text-gray-400 text-sm">
-                                contacto@barberpro.com
+                                imperiumbarberiia@gmail.com
                             </p>
                         </div>
                     </div>

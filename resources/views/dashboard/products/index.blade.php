@@ -39,8 +39,8 @@
                             <td class="px-4 py-3">{{ $product->name }}</td>
                             <td class="px-4 py-3 text-sm text-zinc-300">{{ $product->description }}</td>
                             <td class="px-4 py-3">Gs {{ number_format($product->price, 0, ',', '.') }}</td>
-                            <td class="px-4 py-3 text-center">{{ $product->stock }}</td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="px-4 py-3">{{ $product->stock }}</td>
+                            <td class="px-4 py-3">
                                 <form action="{{ route('dashboard.products.toggle-featured', $product) }}" method="POST">
                                     @csrf
                                     @method('PATCH')

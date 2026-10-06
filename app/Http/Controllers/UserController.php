@@ -15,7 +15,7 @@ class UserController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('role:admin');
+        $this->middleware('role:admin')->except('clients');
     }
     public function index()
     {
@@ -148,7 +148,7 @@ class UserController extends Controller
             $user->syncRoles([$validated['role']]);
         }
 
-        return redirect()->route('users.index')->with('success', 'Usuario actualizadp correctamente!');
+        return redirect()->route('users.index')->with('success', 'Usuario actualizado correctamente!');
     }
 
     /**

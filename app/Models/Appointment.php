@@ -12,7 +12,6 @@ class Appointment extends Model
     protected $fillable = [
         'client_id',
         'barber_id',
-        'service_id',
         'scheduled_at',
         'status',
     ];
@@ -29,7 +28,7 @@ class Appointment extends Model
         return $this->belongsTo(User::class, 'barber_id');
     }
 
-    public function service(){
-        return $this->belongsTo(Service::class);
+    public function services(){
+        return $this->belongsToMany(Service::class, 'appointment_service')->withPivot('price')->withTimestamps();
     }
 }

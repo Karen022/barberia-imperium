@@ -90,4 +90,9 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
     }
+
+    public function unavailabilities()
+    {
+        return $this->hasMany(BarberUnavailability::class, 'barber_id');
+    }
 }
