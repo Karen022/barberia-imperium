@@ -71,7 +71,7 @@ class AppointmentController extends Controller
      */
     public function store(Request $request)
     {
-     
+
         $validated = $request->validate([
             'client_id' => 'required|exists:users,id',
             'barber_id' => 'required|exists:users,id',
@@ -79,10 +79,10 @@ class AppointmentController extends Controller
             'service_ids.*' => 'integer|exists:services,id',
             'scheduled_at' => 'required|date_format:Y-m-d\TH:i',
         ]);
-        
+
 
         try {
-            //  Obtener duración del servicio
+            //  Obtener duración de los servicios
             $services = Service::whereIn('id', $validated['service_ids'])->get();
             $totalDuration = $services->sum('duration_min');
             $start = Carbon::createFromFormat('Y-m-d\TH:i', $validated['scheduled_at']);
@@ -203,71 +203,69 @@ class AppointmentController extends Controller
         $validated = $request->validate([
             'client_id' => 'required|exists:users,id',
             'barber_id' => 'required|exists:users,id',
-            'service_id' => 'required|array, min:1',
+            'service_ids' => 'required|array|min:1',
             'service_ids.*' => 'integer|exists:services,id',
             'scheduled_at' => 'required|date_format:Y-m-d\TH:i',
             'status' => 'required|in:pending,completed,cancelled',
         ]);
 
         try {
-            // Obtener duración del servicio
-            $service = Service::findOrFail($validated['service_id']);
-
-            $start = Carbon::createFromFormat(
-                'Y-m-d\TH:i',
-                $validated['scheduled_at']
-            );
-
-            $end = (clone $start)->addMinutes($service->duration_min ?? 30);
+            //  Obtener duración de los  servicios
+            $services = Service::whereIn('id', $validated['service_ids'])->get();
+            $totalDuration = $services->sum('duration_min');
+            $start = Carbon::createFromFormat('Y-m-d\TH:i', $validated['scheduled_at']);
+            $end = $start->copy()->addMinutes($totalDuration);
 
             // Comprobar solapamiento con otros turnos del mismo barbero
-            $conflict = Appointment::where('barber_id', $validated['barber_id'])
+
+            $appointments = Appointment::with('services')
+                ->where('barber_id', $validated['barber_id'])
                 ->where('id', '!=', $appointment->id)
                 ->where('status', '!=', 'cancelled')
-                ->where(function ($q) use ($start, $end) {
-                    $q->whereBetween(
-                        'scheduled_at',
-                        [$start, $end->copy()->subSecond()]
-                    )
-                        ->orWhereRaw(
-                            "ADDTIME(
-                        scheduled_at,
-                        SEC_TO_TIME(
-                            (
-                                SELECT COALESCE(duration_min, 0)
-                                FROM services
-                                WHERE services.id = appointments.service_id
-                            ) * 60
-                        )
-                    ) > ?
-                    AND scheduled_at < ?",
-                            [
-                                $start->format('Y-m-d H:i:s'),
-                                $end->format('Y-m-d H:i:s')
-                            ]
-                        );
-                })
-                ->exists();
+                ->whereDate('scheduled_at', $start->toDateString())
+                ->get();
 
-            if ($conflict) {
-                return back()
-                    ->withErrors([
-                        'scheduled_at' => 'El barbero ya tiene un turno agendado en ese horario.'
-                    ])
-                    ->withInput();
+            foreach ($appointments as $otherAppointment) {
+                $otherStart = Carbon::parse($otherAppointment->scheduled_at);
+
+                $otherDuration = $otherAppointment->services
+                    ->sum('duration_min');
+
+                $otherEnd = $otherStart->copy()
+                    ->addMinutes($otherDuration);
+
+                // Comprobar si los horarios se superponen.
+                if ($start < $otherEnd && $end > $otherStart) {
+                    return back()
+                        ->withErrors([
+                            'scheduled_at' =>
+                                'El barbero ya tiene un turno agendado en ese horario.',
+                        ])
+                        ->withInput();
+                }
             }
 
             $appointment->update([
                 'client_id' => $validated['client_id'],
                 'barber_id' => $validated['barber_id'],
-                'service_id' => $validated['service_id'],
                 'scheduled_at' => $start->format('Y-m-d H:i:s'),
                 'status' => $validated['status'],
             ]);
 
+            $appointment->services()->sync(
+                $services->mapWithKeys(function ($service) {
+                    return [
+                        $service->id => [
+                            'price' => $service->price,
+                        ],
+                    ];
+                })->all()
+            );
+
             return redirect()
                 ->route('dashboard.appointments.index')
                 ->with('success', 'Turno actualizado correctamente.');
+
 
         } catch (\Throwable $e) {
 
@@ -305,30 +303,58 @@ class AppointmentController extends Controller
         try {
             DB::transaction(function () use ($appointment, $status) {
 
-                if ($status == 'completed') {
 
+                if ($status === 'completed') {
+
+                    // Obtener todos los servicios asociados al turno
+                    $appointment->load('services');
+
+                    $services = $appointment->services;
+
+                    if ($services->isEmpty()) {
+                        throw new \RuntimeException(
+                            'No se puede completar un turno sin servicios asociados.'
+                        );
+                    }
+
+                    // Calcular el total usando los precios guardados en el turno
+                    $total = $services->sum(
+                        fn($service) => $service->pivot->price
+                    );
+
+                    // Crear una sola venta por el turno
                     $sale = Sale::create([
                         'user_id' => auth()->id(),
                         'client_id' => $appointment->client_id,
-                        'total' => $appointment->service->price,
+                        'total' => $total,
                         'payment_method' => null,
                     ]);
 
-                    $sale->services()->attach($appointment->service_id, [
-                        'price' => $appointment->service->price,
-                        'performed_by' => $appointment->barber_id,
-                    ]);
+                    // Registrar todos los servicios y conservar sus precios
+                    $saleServices = $services->mapWithKeys(
+                        function ($service) use ($appointment) {
+                            return [
+                                $service->id => [
+                                    'price' => $service->pivot->price,
+                                    'performed_by' => $appointment->barber_id,
+                                ],
+                            ];
+                        }
+                    )->toArray();
+
+                    $sale->services()->attach($saleServices);
                 }
 
                 $appointment->update([
                     'status' => $status,
                 ]);
+
             });
 
             return back()->with(
                 'success',
-                'status' === 'completed'
-                ? 'Turno completado y servicio registrado correctamente.'
+                $status === 'completed'
+                ? 'Turno completado y servicios registrados correctamente.'
                 : 'Turno cancelado correctamente.'
             );
         } catch (\Throwable $e) {

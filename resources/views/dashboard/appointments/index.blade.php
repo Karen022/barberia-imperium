@@ -17,7 +17,7 @@
 
         <div class="bg-black/40 border border-zinc-700 rounded-2xl overflow-x-auto">
 
-            <div class="flex justify-center items-center mb-6 pt-5">
+            <div class="flex justify-center items-center mb-6 pt-5 ">
 
                 <h2 class="text-lg text-zinc-200 font-semibold">
                     Turnos Reservados
@@ -27,20 +27,20 @@
 
             {{-- Tabla --}}
             <table class="w-full text-sm text-zinc-300">
-                <thead class="text-left border-b border-zinc-700">
+                <thead class="text-left border-b bg-zinc-800 border-zinc-700 ">
                     <tr>
                         <th class="px-4 py-3 text-left">Clientes</th>
                         <th class="px-4 py-3 text-left">Fecha</th>
                         <th class="px-4 py-3 text-left">Hora</th>
                         <th class="px-4 py-3 text-left">Servicio</th>
                         <th class="px-4 py-3 text-left">Estado</th>
-                        <th class="px-4 py-3 text-left">Acciones</th>
+                        <th colspan="2" class="px-4 py-3 text-center">Acciones</th>
                     </tr>
                 </thead>
 
                 <tbody>
                     @forelse ($appointments as $appointment)
-                        <tr class="border-b border-zinc-700">
+                        <tr class="border-b border-zinc-700 hover:bg-zinc-800/50 transition">
                             <td class="px-4 py-3 text-left">{{ $appointment->client?->name ?? 'Sin cliente' }}</td>
                             <td class="px-4 py-3 text-left">
                                 {{ \Carbon\Carbon::parse($appointment->scheduled_at)->format('d/m/Y') }}
@@ -236,40 +236,40 @@
 
                     <tbody>
                         @forelse ($unavailabilities as $unavailability)
-                                            <tr class="border-b border-zinc-700">
+                            <tr class="border-b border-zinc-700 hover:bg-zinc-800/70">
 
-                                                <td class="px-4 py-3">
-                                                    {{ $unavailability->barber?->name ?? 'Sin barbero' }}
-                                                </td>
+                                <td class="px-4 py-3">
+                                    {{ $unavailability->barber?->name ?? 'Sin barbero' }}
+                                </td>
 
-                                                <td class="px-4 py-3">
-                                                    {{ $unavailability->start_time->format('d/m/Y H:i') }}
-                                                </td>
+                                <td class="px-4 py-3">
+                                    {{ $unavailability->start_time->format('d/m/Y H:i') }}
+                                </td>
 
-                                                <td class="px-4 py-3">
-                                                    {{ $unavailability->end_time->format('d/m/Y H:i') }}
-                                                </td>
+                                <td class="px-4 py-3">
+                                    {{ $unavailability->end_time->format('d/m/Y H:i') }}
+                                </td>
 
-                                                <td class="px-4 py-3">
-                                                    {{ $unavailability->reason ?? '—' }}
-                                                </td>
+                                <td class="px-4 py-3">
+                                    {{ $unavailability->reason ?? '—' }}
+                                </td>
 
-                                                <td class="px-4 py-3">
-                                                    <form method="POST" action="{{ route(
-                                                        'dashboard.appointments.unavailability.destroy',
-                                                        $unavailability) }}"
-                                                    >
-                                                        @csrf
-                                                        @method('DELETE')
+                                <td class="px-4 py-3">
+                                    <form method="POST" action="{{ route(
+                                        'dashboard.appointments.unavailability.destroy',
+                                        $unavailability) }}"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
 
-                                                        <button type="submit"
-                                                            class="border border-red-600/30 text-red-400 hover:bg-red-600/30 px-4 py-2 rounded-xl font-semibold transition">
-                                                            Eliminar
-                                                        </button>
-                                                    </form>
-                                                </td>
+                                            <button type="submit"
+                                                class="border border-red-600/30 text-red-400 hover:bg-red-600/30 px-4 py-2 rounded-xl font-semibold transition">
+                                                    Eliminar
+                                            </button>
+                                    </form>
+                                </td>
 
-                                            </tr>
+                            </tr>
                         @empty
                             <tr>
                                 <td colspan="5" class="text-center text-zinc-500 text-xs py-4">

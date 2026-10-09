@@ -114,18 +114,7 @@
                         </p>
                     @enderror
                 </div>
-                <div id="services-summary" class="mt-4 mb-5 px-4 py-3 bg-black/30 border border-zinc-700 rounded-xl text-sm">
-                    <div class="flex items-center justify-between gap-4">
-                        <span id="services-count" class="text-neutral-400">
-                            Seleccioná uno o más servicios
-                        </span>
-
-                        <span id="services-duration" class="text-yellow-500 font-semibold whitespace-nowrap"></span>
-                    </div>
-
-                    <div id="services-total" class="mt-1 text-right text-white font-semibold"></div>
-                </div>
-
+                
                 {{-- Fecha y hora --}}
                 <div>
                     <label class="block text-sm text-zinc-300 mb-1">

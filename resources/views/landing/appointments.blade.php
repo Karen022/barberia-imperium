@@ -75,7 +75,7 @@
                     <!-- BARBERO -->
                     <div class="mb-6">
                         <label for="barber" class="block mb-2 text-sm font-medium">
-                            Barbero (opcional)
+                            Barbero
                         </label>
                         <select name="barber_id" id="barber"
                             class="w-full bg-black/40 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-yellow-500 focus:border-yellow-500">
