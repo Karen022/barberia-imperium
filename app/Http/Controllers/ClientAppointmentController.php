@@ -64,7 +64,7 @@ class ClientAppointmentController extends Controller
         $startDay = $date->copy()->setTime(9, 0);
         $endDay = $date->copy()->setTime(20, 0);
 
-        $interval = 30;
+        $interval = 40;
         $slots = [];
 
         // Turnos existentes
