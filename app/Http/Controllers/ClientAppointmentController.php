@@ -61,8 +61,11 @@ class ClientAppointmentController extends Controller
 
         $duration = $services->sum('duration_min');
 
-        $startDay = $date->copy()->setTime(9, 0);
-        $endDay = $date->copy()->setTime(20, 0);
+        $morningStart = $date->copy()->setTime(8, 0);
+        $morningEnd = $date->copy()->setTime(12, 0);
+
+        $afternoonStart = $date->copy()->setTime(13, 0);
+        $afternoonEnd = $date->copy()->setTime(20, 0);
 
         $interval = 40;
         $slots = [];
@@ -87,69 +90,79 @@ class ClientAppointmentController extends Controller
                 'barber_id',
                 $request->barber_id
             )
-                ->where('start_time', '<', $endDay)
-                ->where('end_time', '>', $startDay)
+                ->where('start_time', '<', $afternoonEnd)
+                ->where('end_time', '>', $morningStart)
                 ->get();
         }
 
         // Generar horarios
-        for (
-            $time = $startDay->copy();
-            $time->lt($endDay);
-            $time->addMinutes($interval)
-        ) {
-            $slotStart = $time->copy();
-            $slotEnd = $slotStart->copy()->addMinutes($duration);
 
-            if ($slotEnd->gt($endDay)) {
-                continue;
-            }
+        $periods = [
+            [$morningStart, $morningEnd],
+            [$afternoonStart, $afternoonEnd],
+        ];
 
-            $available = true;
+        foreach ($periods as [$periodStart, $periodEnd])
+        {
+            for (
+                $time = $periodStart->copy();
+                $time->lt($periodEnd);
+                $time->addMinutes($interval)
+            ) {
+                $slotStart = $time->copy();
+                $slotEnd = $slotStart->copy()->addMinutes($duration);
 
-            // Comprobar turnos existentes
-
-            foreach ($appointments as $appointment) {
-                $apptStart = Carbon::parse($appointment->scheduled_at);
-
-                $apptDuration = $appointment->services->sum(
-                    'duration_min'
-                );
-
-                $apptEnd = $apptStart->copy()->addMinutes($apptDuration);
-
-                if ($slotStart < $apptEnd && $slotEnd > $apptStart) {
-                    $available = false;
-                    break;
+                if ($slotEnd->gt($periodEnd)) {
+                    continue;
                 }
-            }
 
-            // Comprobar indisponibilidades del barbero
+                $available = true;
 
-            if ($available) {
-                foreach ($unavailabilities as $unavailability) {
+                // Comprobar turnos existentes
 
-                    if (
-                        $slotStart < $unavailability->end_time &&
-                        $slotEnd > $unavailability->start_time
-                    ) {
+                foreach ($appointments as $appointment) {
+                    $apptStart = Carbon::parse($appointment->scheduled_at);
+
+                    $apptDuration = $appointment->services->sum(
+                        'duration_min'
+                    );
+
+                    $apptEnd = $apptStart->copy()->addMinutes($apptDuration);
+
+                    if ($slotStart < $apptEnd && $slotEnd > $apptStart) {
                         $available = false;
                         break;
                     }
                 }
+
+                // Comprobar indisponibilidades del barbero
+
+                if ($available) {
+                    foreach ($unavailabilities as $unavailability) {
+
+                        if (
+                            $slotStart < $unavailability->end_time &&
+                            $slotEnd > $unavailability->start_time
+                        ) {
+                            $available = false;
+                            break;
+                        }
+                    }
+                }
+
+                // No mostrar horarios pasados
+
+                if ($date->isToday() && $slotStart->lte($now)) {
+                    $available = false;
+                }
+
+                $slots[] = [
+                    'time' => $slotStart->format('H:i'),
+                    'available' => $available,
+                ];
             }
-
-            // No mostrar horarios pasados
-
-            if ($date->isToday() && $slotStart->lte($now)) {
-                $available = false;
-            }
-
-            $slots[] = [
-                'time' => $slotStart->format('H:i'),
-                'available' => $available,
-            ];
         }
+        
 
         return response()->json($slots);
     }
