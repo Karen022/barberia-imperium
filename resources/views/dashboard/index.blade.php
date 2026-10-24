@@ -12,28 +12,28 @@
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
 
-        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
+        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800 hover:bg-zinc-800/50 transition">
             <p class="text-zinc-400 text-sm">Mis turnos hoy</p>
             <p class="text-3xl font-bold mt-2">
                 {{ $data['personal']['appointmentsToday'] }}
             </p>
         </div>
 
-        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
+        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800 hover:bg-zinc-800/50 transition">
             <p class="text-zinc-400 text-sm">Turnos este mes</p>
             <p class="text-3xl font-bold mt-2">
                 {{ $data['personal']['monthlyAppointments'] }}
             </p>
         </div>
 
-        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
+        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800 hover:bg-zinc-800/50 transition">
             <p class="text-zinc-400 text-sm">Mis ingresos hoy</p>
             <p class="text-3xl font-bold mt-2 text-yellow-500">
                 Gs {{ number_format($data['personal']['incomeToday'], 0, ',', '.') }}
             </p>
         </div>
 
-        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
+        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800 hover:bg-zinc-800/50 transition">
             <p class="text-zinc-400 text-sm">Ventas realizadas</p>
             <p class="text-3xl font-bold mt-2">
                 {{ $data['personal']['salesCount'] }}
@@ -49,28 +49,28 @@
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
 
-        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
+        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800 hover:bg-zinc-800/50 transition">
             <p class="text-zinc-400 text-sm">Turnos hoy</p>
             <p class="text-3xl font-bold mt-2">
                 {{ $data['global']['appointmentsToday'] }}
             </p>
         </div>
 
-        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
+        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800 hover:bg-zinc-800/50 transition">
             <p class="text-zinc-400 text-sm">Ingresos totales hoy</p>
             <p class="text-3xl font-bold mt-2 text-yellow-500">
                 Gs {{ number_format($data['global']['incomeToday'], 0, ',', '.') }}
             </p>
         </div>
 
-        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
+        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800 hover:bg-zinc-800/50 transition">
             <p class="text-zinc-400 text-sm">Clientes</p>
             <p class="text-3xl font-bold mt-2">
                 {{ $data['global']['clientsCount'] }}
             </p>
         </div>
 
-        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
+        <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800 hover:bg-zinc-800/50 transition">
             <p class="text-zinc-400 text-sm">Barberos</p>
             <p class="text-3xl font-bold mt-2">
                 {{ $data['global']['barbersCount'] }}

@@ -7,6 +7,7 @@ use App\Models\Service;
 use App\Models\User;
 use App\Models\Sale;
 use App\Models\BarberUnavailability;
+use App\Services\CommissionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -88,6 +89,12 @@ class AppointmentController extends Controller
             $start = Carbon::createFromFormat('Y-m-d\TH:i', $validated['scheduled_at']);
             $end = $start->copy()->addMinutes($totalDuration);
 
+            if (app(CommissionService::class)->isDateInClosedPeriod($start)) {
+                return back()->withErrors([
+                    'scheduled_at' => 'No se pueden registrar turnos en una semana que ya fue liquidada.',
+                ])
+                ->withInput();
+            }
             // Verificar horario bloqueado del barbero
             $hasUnavailability = BarberUnavailability::where(
                 'barber_id',
@@ -119,7 +126,7 @@ class AppointmentController extends Controller
                 );
 
                 $appointmentDuration = $appointment->services
-                    ->sum('duration_min');
+                    ->sum(fn($service) => $service->pivot->duration_min);
 
                 $appointmentEnd = $appointmentStart
                     ->copy()
@@ -153,6 +160,7 @@ class AppointmentController extends Controller
                     return [
                         $service->id => [
                             'price' => $service->price,
+                            'duration_min' => $service->duration_min,
                         ],
                     ];
                 })->toArray()
@@ -216,6 +224,19 @@ class AppointmentController extends Controller
             $start = Carbon::createFromFormat('Y-m-d\TH:i', $validated['scheduled_at']);
             $end = $start->copy()->addMinutes($totalDuration);
 
+            $commissionService = app(CommissionService::class);
+
+            if (
+                $commissionService->isDateInClosedPeriod(
+                    CArbon::parse($appointment->scheduled_at)
+                ) || 
+                $commissionService->isDateInClosedPeriod($start)
+            ) {
+                return back()
+                    ->withErrors([
+                        'scheduled_at' => 'No se pueden modificar turnos pertenecientes a una semana que ya fue liquidada.',
+                    ])->withInput();
+            }
             // Comprobar solapamiento con otros turnos del mismo barbero
 
             $appointments = Appointment::with('services')
@@ -229,7 +250,7 @@ class AppointmentController extends Controller
                 $otherStart = Carbon::parse($otherAppointment->scheduled_at);
 
                 $otherDuration = $otherAppointment->services
-                    ->sum('duration_min');
+                    ->sum(fn($service) => $service->pivot->duration_min);
 
                 $otherEnd = $otherStart->copy()
                     ->addMinutes($otherDuration);
@@ -257,6 +278,7 @@ class AppointmentController extends Controller
                     return [
                         $service->id => [
                             'price' => $service->price,
+                            'duration_min' => $service->duration_min,
                         ],
                     ];
                 })->all()
@@ -282,7 +304,7 @@ class AppointmentController extends Controller
         }
     }
 
-    public function updateStatus(Appointment $appointment, string $status)
+    public function updateStatus(Request $request, Appointment $appointment, string $status)
     {
         if (!in_array($status, ['completed', 'cancelled'])) {
             abort(403);
@@ -300,8 +322,22 @@ class AppointmentController extends Controller
             return back();
         }
 
+        // Validar el metodo de pago solo al completar el turno
+        $paymentMethod = null;
+
+        if ($status === 'completed'){
+            $validated = $request->validate([
+                'payment_method' => [
+                    'required',
+                    'string',
+                    'in:Efectivo,Transferencia,QR',
+                ],
+            ]);
+
+            $paymentMethod = $validated['payment_method'];
+        }
         try {
-            DB::transaction(function () use ($appointment, $status) {
+            DB::transaction(function () use ($appointment, $status, $paymentMethod) {
 
 
                 if ($status === 'completed') {
@@ -326,8 +362,9 @@ class AppointmentController extends Controller
                     $sale = Sale::create([
                         'user_id' => auth()->id(),
                         'client_id' => $appointment->client_id,
+                        'appointment_id' => $appointment->id,
                         'total' => $total,
-                        'payment_method' => null,
+                        'payment_method' => $paymentMethod,
                     ]);
 
                     // Registrar todos los servicios y conservar sus precios
@@ -373,6 +410,47 @@ class AppointmentController extends Controller
             );
         }
     }
+
+    public function updatePaymentMethod(Request $request, Appointment $appointment)
+{
+    // Verificar permisos
+    if (!auth()->user()->hasRole('admin') && auth()->id() !== $appointment->barber_id) {
+        abort(403);
+    }
+
+    // Dolo se puede cambiar el metodo de pago de turnos completados
+    if ($appointment->status !== 'completed') {
+        return back()->with(
+            'error',
+            'Solo puedes cambiar el método de pago de un turno completado.'
+        );
+    }
+
+    // Validar el nuevo metodo de pago
+    $validated = $request->validate([
+        'payment_method' => [
+            'required',
+            'string',
+            'in:Efectivo,Transferencia,QR',
+        ],
+    ]);
+
+    // Buscar la venta asociada al turno
+    $sale = Sale::where('appointment_id', $appointment->id)
+        ->where('status', 'completed')
+        ->first();
+
+    if (!$sale) {
+        return back()->with('error', 'No se encontró una venta asociada a este turno.');
+    }
+
+    // Actualizar exclusivamente el metodo de pago
+    $sale->update([
+        'payment_method' => $validated['payment_method'],
+    ]);
+
+    return back()->with('success', 'Método de pago actualizado correctamente.');
+}
 
     public function storeUnavailability(Request $request)
     {

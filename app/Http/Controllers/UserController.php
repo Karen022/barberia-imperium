@@ -36,12 +36,12 @@ class UserController extends Controller
 
         $barbers = User::role('barber')->get();
 
-        return view('dashboard.barbers.index', compact('barbers'));
+        return view('dashboard.admin.barbers.index', compact('barbers'));
     }
 
     public function createBarber()
     {
-        return view('dashboard.barbers.create');
+        return view('dashboard.admin.barbers.create');
     }
 
     /**
@@ -69,7 +69,7 @@ class UserController extends Controller
 
         $user->assignRole('barber');
 
-        return redirect()->route('dashboard.barbers.index')
+        return redirect()->route('dashboard.admin.barbers.index')
             ->with(
             'success',
             'Barbero creaado correctamente');
@@ -104,7 +104,7 @@ class UserController extends Controller
                 : 'active',
         ]);
 
-        return redirect()->route('dashboard.barbers.index')
+        return redirect()->route('dashboard.admin.barbers.index')
             ->with('success', 'Estado del barbero actualizado correctamente');
     }
 

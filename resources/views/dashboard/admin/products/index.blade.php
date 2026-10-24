@@ -13,7 +13,7 @@
         </div>
         <div class="bg-black/40 border border-zinc-700 rounded-2xl  overflow-x-auto">
             <table class="w-full">
-                <thead class="bg-zinc-900/80 text-gray-300">
+                <thead class="bg-zinc-800 text-gray-300">
                     <tr>
                         <th class="px-4 py-3 text-left">Id</th>
                         <th class="px-4 py-3 text-left">Imagen</th>
@@ -22,11 +22,12 @@
                         <th class="px-4 py-3 text-left">Precio</th>
                         <th class="px-4 py-3 text-left">Cantidad</th>
                         <th class="px-4 py-3 text-left">Destacado</th>
+                        <th colspan="2" class="px-4 py-3 text-center">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($products as $product)
-                        <tr class="border-t border-zinc-700">
+                        <tr class="border-t border-zinc-700 hover:bg-zinc-800/50 transition">
                             <td class="px-4 py-3">{{ $product->id }}</td>
                             <td class="px-4 py-3">
                                 @if($product->image)

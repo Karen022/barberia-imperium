@@ -14,10 +14,8 @@
 
 
         <div class="w-full bg-black/40 border border-zinc-700 rounded-2xl overflow-x-auto">
-
-
             <table class="w-full table-auto visual-table">
-                <thead class="bg-zinc-900/80 text-gray-300">
+                <thead class="bg-zinc-800 text-gray-300">
                     <tr>
                         <th class="px-5 py-4 text-left">#</th>
                         <th class="px-5 py-4 text-left ">Detalle de Venta</th>

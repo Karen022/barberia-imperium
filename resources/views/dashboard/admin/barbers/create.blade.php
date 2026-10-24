@@ -29,7 +29,7 @@
                     </label>
 
                     <input type="text" id="name" name="name" value="{{ old('name') }}" required
-                        class="w-full bg-zinc-900 border border-zinc-700 focus:outline-none focus:border-yellow-500 focus:ring-0 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-yellow-600">
+                        class="w-full bg-zinc-900 border border-zinc-700    rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-yellow-600">
 
                     @error('name')
                         <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
@@ -43,7 +43,7 @@
                     </label>
 
                     <input type="email" id="email" name="email" value="{{ old('email') }}" required
-                        class="w-full bg-zinc-900 border border-zinc-700 focus:outline-none focus:border-yellow-500 focus:ring-0 rounded-xl px-4 h-12 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-yellow-600">
+                        class="w-full bg-zinc-900 border border-zinc-700  rounded-xl px-4 h-12 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-yellow-600">
 
                     @error('email')
                         <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
@@ -57,7 +57,7 @@
                     </label>
 
                     <input type="password" id="password" name="password" required
-                        class="w-full bg-zinc-900 border border-zinc-700 focus:outline-none focus:border-yellow-500 focus:ring-0 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-yellow-600">
+                        class="w-full bg-zinc-900 border border-zinc-700  rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-yellow-600">
 
                     @error('password')
                         <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
@@ -71,7 +71,7 @@
                     </label>
 
                     <input type="password" id="password_confirmation" name="password_confirmation" required
-                        class="w-full bg-zinc-900 border border-zinc-700 focus:outline-none focus:border-yellow-500 focus:ring-0 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-yellow-600">
+                        class="w-full bg-zinc-900 border border-zinc-700  rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-yellow-600">
 
                     @error('password_confirmation')
                         <p class="text-red-400 text-sm mt-1">{{ $message }}</p>

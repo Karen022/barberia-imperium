@@ -245,6 +245,35 @@
 
                     </template>
 
+                    <div>
+                        <label for="payment_method" class="block text-sm text-zinc-300 mb-2">
+                            Método de pago
+                        </label>
+
+                        <select
+                            name="payment_method"
+                            id="payment_method"
+                            class="w-full bg-black/40 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:ring-0 focus:outline-none focus:border-yellow-500"
+                        >
+                            <option value="">Seleccionar método de pago</option>
+
+                            <option value="Efectivo"
+                                {{ old('payment_method', $sale->payment_method) === 'Efectivo' ? 'selected' : '' }}>
+                                Efectivo
+                            </option>
+
+                            <option value="Transferencia"
+                                {{ old('payment_method', $sale->payment_method) === 'Transferencia' ? 'selected' : '' }}>
+                                Transferencia
+                            </option>
+
+                            <option value="QR"
+                                {{ old('payment_method', $sale->payment_method) === 'QR' ? 'selected' : '' }}>
+                                QR
+                            </option>
+                        </select>
+                    </div>
+
 
                     {{-- Botón guardar --}}
                     <div class="pt-4">

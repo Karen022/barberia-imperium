@@ -12,6 +12,7 @@ class Sale extends Model
     protected $fillable = [
         'user_id',
         'client_id', 
+        'appointment_id',
         'total',
         'payment_method',
         'status',
@@ -25,10 +26,19 @@ class Sale extends Model
         return $this->belongsTo(User::class, 'client_id');
     }
 
+    public function appointment(){
+        return $this->belongsTo(Appointment::class);
+    }
+
     public function saleDetails(){
         return $this->hasMany(SaleDetail::class);
     }
     public function services() {
         return $this->belongsToMany(Service::class, 'sale_service')->withPivot('price', 'performed_by')->withTimestamps();
+    }
+
+    public function commissionItems()
+    {
+        return $this->hasMany(CommissionItem::class);
     }
 }

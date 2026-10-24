@@ -148,9 +148,27 @@
                                     </div>
 
                                 </div>
-
                             </template>
 
+                            <div>
+                                <label for="payment_method" class="block  text-sm text-zinc-300 mb-2">
+                                    Método de pago
+                                </label>
+
+                                <select name="payment_method" id="payment_method" class="w-full bg-black/40 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:ring-0 focus:outline-none focus:border-yellow-500">
+                                   <option value="">Selecionar método de pago</option>
+
+                                   <option value="Efectivo">Efectivo</option>
+                                   <option value="Transferencia">Transferencia</option>
+                                   <option value="QR">QR</option>
+                                </select>
+
+                                @error('payment_method')
+                                    <p class="text-red-400 text-xs mt-1">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
+                            </div>
                         </div>
 
                     </div>

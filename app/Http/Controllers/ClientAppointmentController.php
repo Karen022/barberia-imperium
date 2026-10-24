@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BarberUnavailability;
 use App\Models\Service;
 use App\Models\Appointment;
+use App\Services\CommissionService;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -189,6 +190,13 @@ class ClientAppointmentController extends Controller
         $start = Carbon::parse($validated['scheduled_at']);
         $end = $start->copy()->addMinutes($totalDuration);
 
+        if (app(CommissionService::class)->isDateInClosedPeriod($start)) {
+                return back()->withErrors([
+                    'scheduled_at' => 'No se pueden registrar turnos en una semana que ya fue liquidada.'
+                ])
+                ->withInput();
+            }
+
         if ($start->lte(Carbon::now())) {
             return back()
                 ->withErrors([
@@ -240,7 +248,7 @@ class ClientAppointmentController extends Controller
                     $appointmentStart = Carbon::parse($appointment->scheduled_at);
 
                     $appointmentDuration = $appointment->services
-                        ->sum('duration_min');
+                        ->sum(fn ($service) => $service->pivot->duration_min);
 
                     $appointmentEnd = $appointmentStart
                         ->copy()
@@ -301,7 +309,7 @@ class ClientAppointmentController extends Controller
             $appointmentStart = Carbon::parse($appointment->scheduled_at);
 
             $appointmentDuration = $appointment->services
-                ->sum('duration_min');
+                ->sum(fn ($service) => $service->pivot->duration_min);
 
             $appointmentEnd = $appointmentStart
                 ->copy()
@@ -336,6 +344,7 @@ class ClientAppointmentController extends Controller
                 return [
                     $service->id => [
                         'price' => $service->price,
+                        'duration_min' => $service->duration_min,
                     ],
                 ];
             })->toArray()
@@ -354,7 +363,7 @@ class ClientAppointmentController extends Controller
 
     public function myAppointments()
     {
-        $appointments = Appointment::with(['barber', 'service'])
+        $appointments = Appointment::with(['barber', 'services'])
             ->where('client_id', auth()->id())
             ->orderBy('scheduled_at')
             ->get();

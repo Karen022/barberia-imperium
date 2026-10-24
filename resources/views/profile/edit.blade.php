@@ -246,60 +246,61 @@
                 </form>
             </div>
 
-            <!-- ELIMINAR CUENTA -->
-            <div class="bg-neutral-800 rounded-xl shadow-lg p-8 mt-8 border border-red-900/50">
+            @role('client')
+                <!-- ELIMINAR CUENTA -->
+                <div class="bg-neutral-800 rounded-xl shadow-lg p-8 mt-8 border border-red-900/50">
 
-                <div class="mb-6">
-                    <h2 class="text-xl font-semibold text-red-400">
-                        Eliminar cuenta
-                    </h2>
+                    <div class="mb-6">
+                        <h2 class="text-xl font-semibold text-red-400">
+                            Eliminar cuenta
+                        </h2>
 
-                    <p class="text-sm text-gray-400 mt-2">
-                        Una vez eliminada tu cuenta, todos tus datos asociados serán eliminados
-                        permanentemente. Esta acción no se puede deshacer.
-                    </p>
+                        <p class="text-sm text-gray-400 mt-2">
+                            Una vez eliminada tu cuenta, todos tus datos asociados serán eliminados
+                            permanentemente. Esta acción no se puede deshacer.
+                        </p>
+                    </div>
+
+                    <x-confirm-dialog title="¿Eliminar tu cuenta?"
+                        message="Esta acción es permanente. Para confirmar, deberás ingresar tu contraseña actual."
+                        confirmText="Eliminar cuenta" cancelText="Cancelar">
+
+                        <x-slot:trigger>
+                            <span
+                                class="block w-full rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 text-center transition cursor-pointer">
+                                Eliminar mi cuenta
+                            </span>
+                        </x-slot:trigger>
+
+                        <x-slot:confirm>
+
+                            <form action="{{ route('profile.destroy') }}" method="POST"
+                                class="flex justify-center items-center gap-3">
+                                @csrf
+                                @method('DELETE')
+
+                                <input type="password" name="password" placeholder="Contraseña actual"
+                                    autocomplete="current-password"
+                                    class="w-48 rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm text-white placeholder-zinc-500 focus:border-red-500 focus:ring-red-500">
+
+                                <button type="submit"
+                                    class="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700">
+                                    Eliminar
+                                </button>
+                            </form>
+
+                        </x-slot:confirm>
+
+                    </x-confirm-dialog>
+
+                    @if ($errors->userDeletion->has('password'))
+                        <p class="mt-3 text-sm text-red-400">
+                            {{ $errors->userDeletion->first('password') }}
+                        </p>
+                    @endif
+
                 </div>
-
-                <x-confirm-dialog title="¿Eliminar tu cuenta?"
-                    message="Esta acción es permanente. Para confirmar, deberás ingresar tu contraseña actual."
-                    confirmText="Eliminar cuenta" cancelText="Cancelar">
-
-                    <x-slot:trigger>
-                        <span
-                            class="block w-full rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 text-center transition cursor-pointer">
-                            Eliminar mi cuenta
-                        </span>
-                    </x-slot:trigger>
-
-                    <x-slot:confirm>
-
-                        <form action="{{ route('profile.destroy') }}" method="POST"
-                            class="flex justify-center items-center gap-3">
-                            @csrf
-                            @method('DELETE')
-
-                            <input type="password" name="password" placeholder="Contraseña actual"
-                                autocomplete="current-password"
-                                class="w-48 rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm text-white placeholder-zinc-500 focus:border-red-500 focus:ring-red-500">
-
-                            <button type="submit"
-                                class="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700">
-                                Eliminar
-                            </button>
-                        </form>
-
-                    </x-slot:confirm>
-
-                </x-confirm-dialog>
-
-                @if ($errors->userDeletion->has('password'))
-                    <p class="mt-3 text-sm text-red-400">
-                        {{ $errors->userDeletion->first('password') }}
-                    </p>
-                @endif
-
-            </div>
-
+            @endrole
         </div>
     </section>
 @endsection

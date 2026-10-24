@@ -25,7 +25,7 @@
                             Nombre
                         </label>
                         <input type="text" name="name" id="name" value="{{ old('name') }}"
-                            class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 h-12">
+                            class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 h-12 focus:outline-none focus:border-yellow-500 focus:ring-0">
 
                         @error('name')
                             <p class="mt-1 text-sm text-red-400">
@@ -56,7 +56,7 @@
                             Precio
                         </label>
                         <input type="number" name="price" id="price" step="0.01" value="{{ old('price') }}"
-                            class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 h-12">
+                            class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 h-12 focus:outline-none focus:border-yellow-500 focus:ring-0">
 
                         @error('price')
                             <p class="mt-1 text-sm text-red-400">
@@ -72,7 +72,7 @@
                         </label>
                         <input type="number" min="0" step="5" name="duration_min" id="duration_min"
                             value="{{ old('duration_min', 30) }}"
-                            class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 h-12">
+                            class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 h-12 focus:outline-none focus:border-yellow-500 focus:ring-0">
 
                         @error('duration_min')
                             <p class="mt-1 text-sm text-red-400">
@@ -87,7 +87,8 @@
                             Descripción
                         </label>
                         <textarea name="description" id="description" rows="3"
-                            class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 resize-none">{{ old('description') }}</textarea>
+                            class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 resize-none focus:outline-none focus:border-yellow-500 focus:ring-0"
+                        >{{ old('description') }}</textarea>
 
                         @error('description')
                             <p class="mt-1 text-sm text-red-400">

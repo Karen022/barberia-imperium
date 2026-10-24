@@ -54,7 +54,8 @@ class SaleController extends Controller
 
         $validated = $request->validate([
             'client_id' => 'nullable|exists:users,id',
-            'payment_method' => 'nullable|string|max:50',
+
+            'payment_method' => 'required|string|max:255',
 
             'items' => 'required|array|min:1',
             'items.*.type' => 'required|in:product,service',
@@ -198,6 +199,8 @@ class SaleController extends Controller
     $validated = $request->validate([
         'client_id' => 'nullable|exists:users,id',
 
+        'payment_method' => 'required|string|max:255',
+
         'items' => 'required|array|min:1',
 
         'items.*.type' => 'required|in:product',
@@ -268,6 +271,7 @@ class SaleController extends Controller
 
             $sale->update([
                 'client_id' => $validated['client_id'] ?? null,
+                'payment_method' => $validated['payment_method'],
                 'total' => $total,
             ]);
         });

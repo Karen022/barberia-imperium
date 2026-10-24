@@ -18,7 +18,7 @@
                 <div>
                     <label for="name" class="text-sm text-zinc-300">Nombre</label>
                     <input type="text" name="name" id="name"
-                        class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 mt-1 h-12"
+                        class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 mt-1 h-12 focus:outline-none focus:border-yellow-500 focus:ring-0"
                         value="{{ old('name', $service->name) }}">
 
                     @error('name')
@@ -50,7 +50,7 @@
                 <div>
                     <label for="price" class="text-sm text-zinc-300">Precio</label>
                     <input type="number" name="price" id="price"
-                        class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 mt-1 h-12"
+                        class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 mt-1 h-12 focus:outline-none focus:border-yellow-500 focus:ring-0"
                         value="{{ old('price', number_format($service->price, 0, '.', '')) }}">
 
                     @error('price')
@@ -62,7 +62,7 @@
                 <div>
                     <label for="duration_min" class="text-sm text-zinc-300">Duración (minutos)</label>
                     <input type="number" min="0" step="5" name="duration_min" id="duration_min"
-                        class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 mt-1 h-12"
+                        class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 mt-1 h-12 focus:outline-none focus:border-yellow-500 focus:ring-0"
                         value="{{ old('duration_min', $service->duration_min)}}">
 
                     @error('duration_min')
@@ -74,7 +74,7 @@
                 <div>
                     <label for="description" class="text-sm text-zinc-300">Descripción</label>
                     <textarea type="text" name="description" id="description"
-                        class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 mt-1 h-20"
+                        class="w-full rounded-xl bg-black/40 px-4 text-white border border-zinc-700 mt-1 h-20 focus:outline-none focus:border-yellow-500 focus:ring-0"
                         value="{{ old('description', $service->description) }}">
                         </textarea>
 

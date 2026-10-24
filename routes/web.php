@@ -3,6 +3,7 @@
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\CashRegisterController;
 use App\Http\Controllers\ClientAppointmentController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SaleController;
@@ -12,6 +13,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\Admin\CommissionController;
+use App\Http\Controllers\Admin\CommissionPaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +50,7 @@ Route::middleware(['auth', 'role:admin|barber'])
         Route::get('clients', [UserController::class, 'clients'])->name('clients.index');
         Route::resource('appointments', AppointmentController::class);
         Route::patch('appointments/{appointment}/status/{status}', [AppointmentController::class, 'updateStatus'])->name('appointments.status');
+        Route::patch('appointments/{appointment}/payment-method', [AppointmentController::class, 'updatePaymentMethod'])->name('appointments.payment-method');
         Route::post('appointments/unavailabilities', [AppointmentController::class, 'storeUnavailability'])->name('appointments.unavailability.store');
         Route::delete('appointments/unavailabilities/{unavailability}', [AppointmentController::class, 'destroyUnavailability'])->name('appointments.unavailability.destroy');
         Route::resource('sales', SaleController::class);
@@ -69,9 +73,19 @@ Route::middleware(['auth', 'role:admin|barber'])
         Route::patch('barbers/{user}/toggleStatus', [UserController::class, 'toggleStatus'])->name('barbers.toggleStatus');
         Route::patch('sales/{sale}/cancel', [SaleController::class, 'cancel'])->name('sales.cancel');
         Route::resource('cash', CashRegisterController::class);
-
         Route::resource('products', ProductController::class);
         Route::patch('/products/{product}/toggle-featured', [ProductController::class, 'toggleFeatured'])->name('products.toggle-featured');
+        Route::resource('expenses', ExpenseController::class)->except(['show']);
+        Route::post('expenses/{expense}/cancel', [ExpenseController::class, 'cancel'])->name('expenses.cancel');
+
+        Route::get('commissions', [CommissionController::class, 'index'])->name('commissions.index');
+        Route::get('commissions/payments', [CommissionPaymentController::class, 'index'])->name('commissions.payments.index');
+        Route::get('commissions/payments/create', [CommissionPaymentController::class, 'create'])->name('commissions.payments.create');
+        Route::post('commissions/payments', [CommissionPaymentController::class, 'store'])->name('commissions.payments.store');
+        Route::get('commissions/payments/barber/{barber}', [CommissionPaymentController::class, 'show'])->name('commissions.payments.show');
+        Route::get('commissions/{commission}', [CommissionController::class, 'show'])->name('commissions.show');
+        Route::post('commissions/close', [CommissionController::class, 'closeWeek'])->name('commissions.close');
+        
     });
 
 });

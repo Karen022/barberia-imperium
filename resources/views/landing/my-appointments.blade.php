@@ -11,7 +11,7 @@
                 <div class="bg-neutral-800 rounded-lg p-6 flex justify-between items-center">
                     <div>
                         <p class="font-semibold">
-                            {{ $appointment->service->name }}
+                            {{ $appointment->services->pluck('name')->implode(', ') }}
                         </p>
 
                         <p class="text-neutral-400 text-sm">

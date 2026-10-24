@@ -12,7 +12,7 @@ class Service extends Model
     protected $fillable = ['name', 'price', 'duration_min', 'description', 'image'];
 
     public function appointments(){
-        return $this->belongsToMany(Appointment::class, 'appointment_service')->withPivot('price')->withTimestamps();
+        return $this->belongsToMany(Appointment::class, 'appointment_service')->withPivot('price', 'duration_min')->withTimestamps();
     }
 
     public function sales() {

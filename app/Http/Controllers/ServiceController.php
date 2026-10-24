@@ -20,7 +20,7 @@ class ServiceController extends Controller
     public function index()
     {
         $services = Service::orderBy('name')->get();
-        return view('dashboard.services.index', compact('services'));
+        return view('dashboard.admin.services.index', compact('services'));
     }
 
     /**
@@ -28,7 +28,7 @@ class ServiceController extends Controller
      */
     public function create()
     {
-        return view('dashboard.services.create');
+        return view('dashboard.admin.services.create');
     }
 
     /**
@@ -51,7 +51,7 @@ class ServiceController extends Controller
         }
         $service = Service::create($validated);
         return redirect()
-            ->route('dashboard.services.index')
+            ->route('dashboard.admin.services.index')
             ->with('success', "Servicio de  '{$service->name}' creado exitosamente!");
         } catch (\Throwable $e) {
             Log::error('Error al registrar servicio.', [
@@ -73,7 +73,7 @@ class ServiceController extends Controller
      */
     public function show(Service $service)
     {
-        return view('dashboard.services.show', compact('service'));
+        return view('dashboard.admin.services.show', compact('service'));
     }
 
     /**
@@ -81,7 +81,7 @@ class ServiceController extends Controller
      */
     public function edit(Service $service)
     {
-        return view('dashboard.services.edit', compact('service'));
+        return view('dashboard.admin.services.edit', compact('service'));
     }
 
     /**
@@ -109,7 +109,7 @@ class ServiceController extends Controller
             $service->update($validated);
 
             return redirect()
-                ->route('dashboard.services.index')
+                ->route('dashboard.admin.services.index')
                 ->with('success', "Servicio de '{$service->name}' actualizado exitosamente!");
         } catch (\Throwable $e) {
             Log::error('Error al actualizar el servicio.', [
@@ -133,7 +133,7 @@ class ServiceController extends Controller
             $service->delete();
 
             return redirect()
-                ->route('dashboard.services.index')
+                ->route('dashboard.admin.services.index')
                 ->with('success', 'Servicio eliminado');
         } catch (\Throwable $e) {
             Log::error('Error al eliminar el servicio.', [

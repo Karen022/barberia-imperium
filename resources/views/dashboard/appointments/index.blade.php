@@ -60,23 +60,30 @@
                                 @endforelse
                             </td>
                             <td class="px-4 py-3 text-left">
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold
-                                                                @if($appointment->status === 'pending') text-yellow-400
-                                                                @elseif($appointment->status === 'completed') text-green-400
-                                                                @else text-red-400 
-                                                                @endif">
-                                    {{ ucfirst($appointment->status) }}
-                                </span>
+
+                                @if ($appointment->status === 'pending')
+                                    <span class="px-3 py-1 text-sm  text-yellow-400">
+                                        Pendiente
+                                    </span>
+                                @elseif ($appointment->status === 'completed')
+                                    <span class="px-3 py-1 text-sm  text-green-400">
+                                        Completado
+                                    </span>
+                                @else
+                                    <span class="px-3 py-1 text-sm  text-red-400">
+                                        Cancelado
+                                    </span>
+                                @endif
                             </td>
                             <td class="px-4 py-3 text-left">
                                 <div class="flex items-center gap-2 flex-wrap">
                                     {{-- Editar completo (admin) --}}
-                                    @role('admin')
+                                    
                                     <a href="{{ route('dashboard.appointments.edit', $appointment) }}"
                                         class="border border-yellow-600 hover:bg-yellow-600/30 text-yellow-600 px-5 py-3 rounded-xl font-semibold">
                                         Editar
                                     </a>
-                                    @endrole
+                                    
 
                                     {{-- Acciones rápidas --}}
                                     @if(
@@ -85,18 +92,19 @@
                                         )
 
                                         {{-- Completar --}}
-                                        <form method="POST"
-                                            action="{{ route('dashboard.appointments.status', [$appointment, 'completed']) }}"
-                                            class="inline">
-                                            @csrf
-                                            @method('PATCH')
+                                        
 
-                                            <button type="submit"
-                                                class="border border-green-600/30 text-green-400 hover:bg-green-600/30 px-5 py-3 rounded-xl font-semibold inline-flex items-center justify-center transition"
-                                                title="Completar turno">
-                                                Completar
-                                            </button>
-                                        </form>
+                                        <button type="button"
+                                            @click="$dispatch('open-payment-modal', {
+                                                    action: '{{ route('dashboard.appointments.status', [$appointment, 'completed']) }}',
+                                                    mode:complete
+                                                })"
+                                            class="border border-green-600/30 text-green-400 hover:bg-green-600/30 px-5 py-3 rounded-xl font-semibold inline-flex items-center justify-center transition"
+                                            title="Completar turno"
+                                        >
+                                            Completar
+                                        </button>
+                                        
 
 
                                         {{-- Cancelar --}}
@@ -113,6 +121,23 @@
                                             </button>
                                         </form>
 
+                                    @endif
+
+                                    @if (
+                                        $appointment->status === 'completed' &&
+                                        (auth()->user()->hasRole('admin') || auth()->id() === $appointment->barber_id)
+                                    )
+                                        <button
+                                            type="button"
+                                            @click="$dispatch('open-payment-modal', {
+                                                action: '{{ route('dashboard.appointments.payment-method', $appointment) }}',
+                                                mode:'update'
+                                            })"
+                                            class="border border-gray-300/30 text-gray-300 hover:bg-gray-200/30 px-5 py-3 rounded-xl font-semibold inline-flex justidy-center transition"
+                                            title="Cambiar método de pago"
+                                        >
+                                            Cambiar pago
+                                        </button>  
                                     @endif
                                 </div>
                             </td>
@@ -283,4 +308,91 @@
         </div>
     </div>
 
+
+    <div
+        x-data="{
+            isOpen:false,
+            formAction: '',
+            paymentMethod:'Efectivo',
+            modalTitle: '',
+            modalDEscription: '',
+            modalButton: '',
+                
+                openModal(action, mode) {
+                    this.formAction = action;
+                    this.paymentMethod = 'Efectivo';
+                    this.isOpen = true;
+
+                    if (mode === 'update') {
+                        this.modalTitle = 'Cambiar método de pago';
+                        this.modalDescription = 'Selecciona el nuevo método de pago.';
+                        this.modalButton = 'Guardar cambios';    
+                    } else {    
+                        this.modalTitle = 'Completar turno';
+                        this.modalDescription = 'Selecciona el método de pago utilizado por el cliente.';
+                        this.modalButton = 'Confirmar';
+                    }
+                }
+            }"
+        @open-payment-modal.window="openModal($event.detail.action, $event.detail.mode) "
+        @keydown.escape.window ="isOpen = false"
+    >
+        <div
+            x-show="isOpen"
+            x-transition.opacity
+            style="display: none;"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+            @click.self="isOpen = false"    
+        >
+            <div 
+                class="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl p-6 shadow-xl"
+                role="dialog"
+                aria-modal="true"
+            >
+                <h2 id="payment-modal-title" class="text-xl font-semibold text-white mb-2" x-text="modalTitle"></h2>
+
+                <p class="text-sm text-zinc-400 mb-6" x-text="modalDescription"></p>
+                    
+                <form method="POST" :action="formAction" >
+                    @csrf
+                    @method('PATCH')
+                    <div class="mb-6">
+                        <label for="payment_method" class="block text-sm tex-zinc-300 mb-2">
+                            Método de pago
+                        </label>
+
+                        <select 
+                            name="payment_method" 
+                            id="payment_method" 
+                            x-model="paymentMethod"
+                            required
+                            class="w-full bg-black border border-zinc-700 focus:ring-0 focus:outline-none focus:border-yellow-500 rounded-xl text-white h-12 px-4"
+                        >
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Transferencia">Transferencia</option>
+                            <option value="QR">QR</option>
+
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button 
+                            type="button"
+                            @click="isOpen = false"
+                            class="w-full border border-zinc-600 text-zinc-300 hover:bg-zinc-800 rounded-xl font-semibold transition"
+                        >
+                            Cancelar
+                        </button>
+
+                        <button
+                            type="submit"
+                            class="w-full bg-yellow-600 hover:bg-yellow-500 text-black py-3 rounded-xl font-semibold transition"
+                            x-text="modalButton"
+                        ></button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
 @endsection

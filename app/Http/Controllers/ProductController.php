@@ -21,7 +21,7 @@ class ProductController extends Controller
     public function index()
     {
         $products = Product::orderBy('name')->get();
-        return view('dashboard.products.index', compact('products'));
+        return view('dashboard.admin.products.index', compact('products'));
     }
 
     /**
@@ -29,7 +29,7 @@ class ProductController extends Controller
      */
     public function create()
     {
-        return view('dashboard.products.create');
+        return view('dashboard.admin.products.create');
     }
 
     /**
@@ -55,7 +55,7 @@ class ProductController extends Controller
             Product::create($validated);
 
             return redirect()
-                ->route('dashboard.products.index')
+                ->route('dashboard.admin.products.index')
                 ->with('success', "Producto agregado satisfactoriamente");
         } catch (\Throwable $e) {
             Log::error('Error al registrar el producto.', [
@@ -75,7 +75,7 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        return view('dashboard.products.show', compact('product'));
+        return view('dashboard.admin.products.show', compact('product'));
     }
 
     /**
@@ -83,7 +83,7 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        return view('dashboard.products.edit', compact('product'));
+        return view('dashboard.admin.products.edit', compact('product'));
     }
 
     /**
@@ -112,7 +112,7 @@ class ProductController extends Controller
             $product->update($validated);
 
             return redirect()
-                ->route('dashboard.products.index')
+                ->route('dashboard.admin.products.index')
                 ->with('success', "Producto actualizado correctamente!");
         } catch (\Throwable $e) {
             Log::error('Error al actualizar el producto.', [
@@ -163,7 +163,7 @@ class ProductController extends Controller
         try {
             $product->delete();
             return redirect()
-                ->route('dashboard.products.index')
+                ->route('dashboard.admin.products.index')
                 ->with('success', "Producto eliminado correctamente!");
         } catch (\Throwable $e) {
             Log::error('Error al eliminar el producto.', [
