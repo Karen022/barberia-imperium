@@ -95,6 +95,12 @@
                                         @endforeach
                                     </select>
 
+                                    @error('items.0.id')
+                                        <p class="text-red 400 text-sm mt-1">
+                                            {{ $message }}
+                                        </p>
+                                    @enderror
+
                                     <input type="hidden" name="items[0][type]" value="product">
 
                                 </div>
@@ -103,6 +109,12 @@
 
                                     <input type="number" name="items[0][quantity]" min="1" value="1"
                                         class="w-full bg-black/40 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 focus:ring-0">
+
+                                    @error('items.0.quantity')
+                                        <p class="text-red 400 text-sm mt-1">
+                                            {{ $message }}
+                                        </p>
+                                    @enderror
 
                                     <button type="button"
                                         class="remove-product bg-yellow-600 hover:bg-yellow-500 text-black px-3 py-2 rounded-xl font-semibold"
@@ -150,8 +162,17 @@
                                 </div>
                             </template>
 
+                        </div>
+                    </div>
+                        @error('items')
+                            <p class="text-red-400 text-sm mt-1">
+                                {{ $message }}
+                            </p>
+                        @enderror
+
+                        <div class="mt-2">
                             <div>
-                                <label for="payment_method" class="block  text-sm text-zinc-300 mb-2">
+                                <label for="payment_method" class="block   text-zinc-300 mb-2">
                                     Método de pago
                                 </label>
 
@@ -170,8 +191,6 @@
                                 @enderror
                             </div>
                         </div>
-
-                    </div>
 
                     {{-- Botón --}}
                     <div class="pt-4">

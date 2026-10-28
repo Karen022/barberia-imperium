@@ -86,9 +86,24 @@
 
                     <form action="{{ route('landing.contact.send') }}" method="POST" class="space-y-6">
 
+                        @if ($errors->has('contact'))
+                            <div class="bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg p-4">
+                                {{ $errors->first('contact') }}
+                            </div>
+                        @endif
+
                         @csrf
-                        <h3 class="text-2xl font-semibold text-center mt-2">Puedes escribirnos cualquier duda o consulta...
+                        <div class="hidden" aria-hidden="true">
+                            <label for="website">No completar este campo</label>
+
+                            <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
+                        </div>
+                        <input type="hidden" name="form_loaded_at" value="{{ time() }}">
+
+                        <h3 class="text-2xl font-semibold text-center mt-2">
+                            Puedes escribirnos cualquier duda o consulta...
                         </h3>
+
                         <div>
                             <label class="block text-sm mb-2">Nombre</label>
                             <input type="text" name="name" value="{{ old('name') }}"
@@ -112,9 +127,7 @@
                         <div>
                             <label class="block text-sm mb-2">Mensaje</label>
                             <textarea rows="4" name="message"
-                                class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 focus:ring-0">
-                                {{ old('message') }}
-                                </textarea>
+                                class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 focus:ring-0">{{ old('message') }}</textarea>
 
                             @error('message')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>

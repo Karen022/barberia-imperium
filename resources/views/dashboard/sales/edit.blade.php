@@ -126,12 +126,19 @@
                                                 </option>
                                             @endforeach
                                         </select>
+                                        
 
                                         <input
                                             type="hidden"
                                             name="items[{{ $index }}][type]"
                                             value="product"
                                         >
+
+                                        @error("items.$index.id")
+                                            <p class="mt-1 text-xs text-red-400">
+                                                {{ $message }}
+                                            </p>
+                                        @enderror
 
                                     </div>
 
@@ -152,6 +159,12 @@
                                                 class="w-full bg-black/40 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 focus:ring-0"
                                             >
 
+                                            @error("items.$index.quantity")
+                                                <p class="mt-1 text-xs text-red-400">
+                                                    {{ $message }}
+                                                </p>
+                                            @enderror
+
                                         </div>
 
                                         <button
@@ -163,87 +176,91 @@
                                         </button>
 
                                     </div>
-                                    @error('items')
-                                        <p class="mt-1 text-sm text-red-400">
-                                            {{ $message }}
-                                        </p>
-                                    @enderror
+
 
                                 </div>
 
                             @endforeach
 
-                        </div>
-                    </div>
+                            {{-- Template para nuevos productos --}}
+                            <template id="product-row-template">
+
+                                <div class="product-row grid grid-cols-3 gap-4 items-end">
+
+                                    <div class="col-span-2">
+
+                                        <label class="block text-sm text-zinc-300 mb-1">
+                                            Producto
+                                        </label>
+
+                                        <select
+                                            data-field="id"
+                                            class="w-full bg-black/40 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 focus:ring-0"
+                                        >
+                                            <option value="">
+                                                Seleccionar producto
+                                            </option>
+
+                                            @foreach ($products as $product)
+                                                <option value="{{ $product->id }}">
+                                                    {{ $product->name }} (Stock: {{ $product->stock }})
+                                                </option>
+                                            @endforeach
+
+                                        </select>
+
+                                        <input
+                                            type="hidden"
+                                            data-field="type"
+                                            value="product"
+                                        >
+
+                                    </div>
 
 
-                    {{-- Template para nuevos productos --}}
-                    <template id="product-row-template">
+                                    <div class="flex gap-2">
 
-                        <div class="product-row grid grid-cols-3 gap-4 items-end">
+                                        <div class="flex-1">
 
-                            <div class="col-span-2">
+                                            <label class="block text-sm text-zinc-300 mb-1">
+                                                Cantidad
+                                            </label>
 
-                                <label class="block text-sm text-zinc-300 mb-1">
-                                    Producto
-                                </label>
+                                            <input
+                                                type="number"
+                                                data-field="quantity"
+                                                min="1"
+                                                value="1"
+                                                class="w-full bg-black/40 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 focus:ring-0"
+                                            >
 
-                                <select
-                                    data-field="id"
-                                    class="w-full bg-black/40 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 focus:ring-0"
-                                >
-                                    <option value="">
-                                        Seleccionar producto
-                                    </option>
+                                        </div>
 
-                                    @foreach ($products as $product)
-                                        <option value="{{ $product->id }}">
-                                            {{ $product->name }} (Stock: {{ $product->stock }})
-                                        </option>
-                                    @endforeach
+                                        <button
+                                            type="button"
+                                            class="remove-product bg-yellow-600 hover:bg-yellow-500 text-black px-3 py-2 rounded-xl font-semibold self-end"
+                                            title="Quitar producto"
+                                        >
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
 
-                                </select>
-
-                                <input
-                                    type="hidden"
-                                    data-field="type"
-                                    value="product"
-                                >
-
-                            </div>
-
-
-                            <div class="flex gap-2">
-
-                                <div class="flex-1">
-
-                                    <label class="block text-sm text-zinc-300 mb-1">
-                                        Cantidad
-                                    </label>
-
-                                    <input
-                                        type="number"
-                                        data-field="quantity"
-                                        min="1"
-                                        value="1"
-                                        class="w-full bg-black/40 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 focus:ring-0"
-                                    >
+                                    </div>
 
                                 </div>
 
-                                <button
-                                    type="button"
-                                    class="remove-product bg-yellow-600 hover:bg-yellow-500 text-black px-3 py-2 rounded-xl font-semibold self-end"
-                                    title="Quitar producto"
-                                >
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-
-                            </div>
+                            </template>
 
                         </div>
+                        
+                        @error('items')
+                            <p class="mt-1 text-xs text-red-400">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
 
-                    </template>
+
+                    
 
                     <div>
                         <label for="payment_method" class="block text-sm text-zinc-300 mb-2">
@@ -272,6 +289,12 @@
                                 QR
                             </option>
                         </select>
+
+                        @error('payment_method')
+                            <p class="text-red-400 text-xs mt-1">
+                                {{ $message }}
+                            </p>
+                        @enderror
                     </div>
 
 

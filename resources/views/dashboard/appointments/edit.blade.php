@@ -75,18 +75,18 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         @foreach($services as $service)
-                            <label class="flex items-center gap-3 bg-black/40 border border-zinc-700 rounded-xl px-3 py-2.5 cursor poitner hover:border-yellow-500 transition">
+                            <label class="flex items-center gap-3 bg-black/40 border border-zinc-700 rounded-xl px-3 py-2.5 cursor pointer hover:border-yellow-500 transition">
                                 <input 
                                     type="checkbox"
                                     name="service_ids[]"
                                     value="{{ $service->id }}"
                                     data-duration="{{ $service->duration_min }}"
                                     data-price="{{ $service->price }}"
-                                    class="w-4 h-4 acent-yellow-500 shrink-0"
-                                    @checked(in_array($service->id, old('service_ids',  $selectedServices)))
+                                    class="w-4 h-4 accent-yellow-500 shrink-0"
+                                    @checked(in_array($service->id, $selectedServices))
                                 >
                                 <span class="flex-1 min-w-0">
-                                    <span class="block text-white-text-sm font-medium truncate">
+                                    <span class="block text-white text-sm font-medium truncate">
                                         {{ $service->name }}
                                     </span>
 
@@ -133,20 +133,22 @@
                 {{-- Estado --}}
                 <div>
                     <label class="text-sm text-zinc-300">Estado</label>
-                    <select name="status"
-                        class="mt-1 w-full bg-black/40 border border-zinc-700 focus:outline-none focus:border-yellow-500 focus:ring-0 text-white rounded-xl h-12 px-4">
-                        <option value="pending" @selected(old('status', $appointment->status) === 'pending')>
-                            Pendiente
-                        </option>
 
-                        <option value="completed" @selected(old('status', $appointment->status) === 'completed')>
-                            Completado
-                        </option>
+                    <div class="mt-1 w-full bg-black/40 border border-zinc-700 text-zinc-400 rounded-xl h-12 px-4 flex items-center">
+                        @switch($appointment->status)
+                            @case('pending')
+                                Pendiente
+                                @break
 
-                        <option value="cancelled" @selected(old('status', $appointment->status) === 'cancelled')>
-                            Cancelado
-                        </option>
-                    </select>
+                            @case('completed')
+                                Completado
+                                @break
+
+                            @case('cancelled')
+                                Cancelado
+                                @break
+                        @endswitch
+                    </div>
 
                     @error('status')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>

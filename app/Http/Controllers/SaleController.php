@@ -24,11 +24,11 @@ class SaleController extends Controller
     {
 
         if (auth()->user()->hasRole('admin')) {
-            $sales = Sale::with('saleDetails.product', 'services', 'user', 'client')->orderBy('created_at', 'desc')->get();
+            $sales = Sale::with('saleDetails.product', 'services', 'user', 'client')->orderBy('created_at', 'desc')->paginate(10);
         } else {
             $sales = Sale::with('saleDetails.product', 'services', 'user', 'client')
                 ->where('user_id', auth()->id())
-                ->orderBy('created_at', 'desc')->get();
+                ->orderBy('created_at', 'desc')->paginate(10);
         }
 
         return view('dashboard.sales.index', compact('sales'));

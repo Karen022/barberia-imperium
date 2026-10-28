@@ -33,6 +33,9 @@
                         <th class="px-4 py-3 text-left">Fecha</th>
                         <th class="px-4 py-3 text-left">Hora</th>
                         <th class="px-4 py-3 text-left">Servicio</th>
+                        @role('admin')
+                        <th class="px-4 py-3 text-left">Barbero</th>
+                        @endrole
                         <th class="px-4 py-3 text-left">Estado</th>
                         <th colspan="2" class="px-4 py-3 text-center">Acciones</th>
                     </tr>
@@ -59,6 +62,11 @@
                                     </span>
                                 @endforelse
                             </td>
+                            @role('admin')
+                                <td class="px-4 py-3 text-left font-semibold">
+                                    {{ $appointment->barber?->name ?? 'Sin barbero' }}
+                                </td>
+                            @endrole
                             <td class="px-4 py-3 text-left">
 
                                 @if ($appointment->status === 'pending')
@@ -97,7 +105,7 @@
                                         <button type="button"
                                             @click="$dispatch('open-payment-modal', {
                                                     action: '{{ route('dashboard.appointments.status', [$appointment, 'completed']) }}',
-                                                    mode:complete
+                                                    mode: 'complete'
                                                 })"
                                             class="border border-green-600/30 text-green-400 hover:bg-green-600/30 px-5 py-3 rounded-xl font-semibold inline-flex items-center justify-center transition"
                                             title="Completar turno"
@@ -133,7 +141,7 @@
                                                 action: '{{ route('dashboard.appointments.payment-method', $appointment) }}',
                                                 mode:'update'
                                             })"
-                                            class="border border-gray-300/30 text-gray-300 hover:bg-gray-200/30 px-5 py-3 rounded-xl font-semibold inline-flex justidy-center transition"
+                                            class="border border-gray-300/30 text-gray-300 hover:bg-gray-200/30 px-5 py-3 rounded-xl font-semibold inline-flex justify-center transition"
                                             title="Cambiar método de pago"
                                         >
                                             Cambiar pago
@@ -144,13 +152,61 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center text-zinc-500 text-xs py-4">
+                            <td colspan="7" class="text-center text-zinc-500 text-xs py-4">
                                 (No hay registros aún)
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
+
+            @if ($appointments->hasPages())
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-zinc-700">
+
+                    <p class="text-sm text-zinc-400">
+                        Mostrando
+                        <span class="text-yellow-500 font-semibold">{{ $appointments->firstItem() }}</span>
+                        a
+                        <span class="text-yellow-500 font-semibold">{{ $appointments->lastItem() }}</span>
+                        de
+                        <span class="text-zinc-200 font-semibold">{{ $appointments->total() }}</span>
+                        turnos
+                    </p>
+
+                    <div class="flex items-center gap-2">
+
+                        {{-- Anterior --}}
+                        @if ($appointments->onFirstPage())
+                            <span class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-600 cursor-not-allowed">
+                                <i class="fa-solid fa-angle-left"></i>
+                            </span>
+                        @else
+                            <a href="{{ $appointments->previousPageUrl() }}"
+                                class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:border-yellow-600 hover:text-yellow-500 transition">
+                                <i class="fa-solid fa-angle-left"></i>
+                            </a>
+                        @endif
+
+                        {{-- Página actual --}}
+                        <span class="px-4 py-2 rounded-lg bg-yellow-600/20 border border-yellow-600/40 text-yellow-500 font-semibold">
+                            {{ $appointments->currentPage() }}
+                        </span>
+
+                        {{-- Siguiente --}}
+                        @if ($appointments->hasMorePages())
+                            <a href="{{ $appointments->nextPageUrl() }}"
+                                class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:border-yellow-600 hover:text-yellow-500 transition">
+                                <i class="fa-solid fa-angle-right"></i>
+                            </a>
+                        @else
+                            <span class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-600 cursor-not-allowed">
+                                <i class="fa-solid fa-angle-right"></i>
+                            </span>
+                        @endif
+
+                    </div>
+                </div>
+            @endif
         </div>
 
         {{-- -Bloquear Horarios --}}
@@ -315,7 +371,7 @@
             formAction: '',
             paymentMethod:'Efectivo',
             modalTitle: '',
-            modalDEscription: '',
+            modalDescription: '',
             modalButton: '',
                 
                 openModal(action, mode) {
@@ -357,7 +413,7 @@
                     @csrf
                     @method('PATCH')
                     <div class="mb-6">
-                        <label for="payment_method" class="block text-sm tex-zinc-300 mb-2">
+                        <label for="payment_method" class="block text-sm text-zinc-300 mb-2">
                             Método de pago
                         </label>
 

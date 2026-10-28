@@ -206,9 +206,51 @@
                 </table>
             </div>
 
-            @if($payments->hasPages())
-                <div class="p-4 border-t border-zinc-700">
-                    {{ $payments->links() }}
+            @if ($payments->hasPages())
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-zinc-700">
+
+                    <p class="text-sm text-zinc-400">
+                        Mostrando
+                        <span class="text-yellow-500 font-semibold">{{ $payments->firstItem() }}</span>
+                        a
+                        <span class="text-yellow-500 font-semibold">{{ $payments->lastItem() }}</span>
+                        de
+                        <span class="text-zinc-200 font-semibold">{{ $payments->total() }}</span>
+                        pagos
+                    </p>
+
+                    <div class="flex items-center gap-2">
+
+                        {{-- Anterior --}}
+                           @if ($payments->onFirstPage())
+                            <span class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-600 cursor-not-allowed">
+                                <i class="fa-solid fa-angle-left"></i>
+                            </span>
+                        @else
+                            <a href="{{ $payments->previousPageUrl() }}"
+                                class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:border-yellow-600 hover:text-yellow-500 transition">
+                                   <i class="fa-solid fa-angle-left"></i>
+                            </a>
+                        @endif
+
+                        {{-- Página actual --}}
+                        <span class="px-4 py-2 rounded-lg bg-yellow-600/20 border border-yellow-600/40 text-yellow-500 font-semibold">
+                            {{ $payments->currentPage() }}
+                        </span>
+
+                        {{-- Siguiente --}}
+                        @if ($payments->hasMorePages())
+                            <a href="{{ $payments->nextPageUrl() }}"
+                                class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:border-yellow-600 hover:text-yellow-500 transition">
+                                <i class="fa-solid fa-angle-right"></i>
+                            </a>
+                        @else
+                            <span class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-600 cursor-not-allowed">
+                                <i class="fa-solid fa-angle-right"></i>
+                            </span>
+                        @endif
+
+                    </div>
                 </div>
             @endif
         </div>

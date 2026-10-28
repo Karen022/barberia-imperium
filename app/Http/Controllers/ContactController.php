@@ -10,11 +10,25 @@ use Illuminate\Http\Request;
 class ContactController extends Controller
 {
     public function send (Request $request) {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'message' => 'required|string|max:5000',
-        ]);
+
+    $loadedAt = $request->input('form_loaded_at');
+
+    if (
+        !is_numeric($loadedAt) ||
+        time() - (int) $loadedAt < 3 ||
+        time() - (int) $loadedAt > 3600
+    ){
+        return back()
+            ->withErrors(['contact' => 'No se pudo verificar el envío. Inténtalo nuevamente.'])
+            ->withInput();
+    }
+
+    $validated = $request->validate([
+        'website' => 'nullable|max:0',
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|max:255',
+        'message' => 'required|string|max:5000',
+    ]);
 
         try {
 

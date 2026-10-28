@@ -279,6 +279,54 @@
                         @endforelse
                     </tbody>
                 </table>
+
+                @if ($sales->hasPages())
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-zinc-700">
+
+                    <p class="text-sm text-zinc-400">
+                        Mostrando
+                        <span class="text-yellow-500 font-semibold">{{ $sales->firstItem() }}</span>
+                        a
+                        <span class="text-yellow-500 font-semibold">{{ $sales->lastItem() }}</span>
+                        de
+                        <span class="text-zinc-200 font-semibold">{{ $sales->total() }}</span>
+                        ingresos
+                    </p>
+
+                        <div class="flex items-center gap-2">
+
+                            {{-- Anterior --}}
+                            @if ($sales->onFirstPage())
+                                <span class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-600 cursor-not-allowed">
+                                    <i class="fa-solid fa-angle-left"></i>
+                                </span>
+                            @else
+                                <a href="{{ $sales->appends(request()->except('sales_page'))->url($sales->currentPage() - 1) }}"
+                                    class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:border-yellow-600 hover:text-yellow-500 transition">
+                                    <i class="fa-solid fa-angle-left"></i>
+                                </a>
+                            @endif
+
+                            {{-- Página actual --}}
+                            <span class="px-4 py-2 rounded-lg bg-yellow-600/20 border border-yellow-600/40 text-yellow-500 font-semibold">
+                                {{ $sales->currentPage() }}
+                            </span>
+
+                            {{-- Siguiente --}}
+                            @if ($sales->hasMorePages())
+                                <a href="{{ $sales->appends(request()->except('sales_page'))->url($sales->currentPage() + 1) }}"
+                                    class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:border-yellow-600 hover:text-yellow-500 transition">
+                                    <i class="fa-solid fa-angle-right"></i>
+                                </a>
+                            @else
+                                <span class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-600 cursor-not-allowed">
+                                    <i class="fa-solid fa-angle-right"></i>
+                                </span>
+                            @endif
+
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -339,6 +387,53 @@
                         @endforelse
                     </tbody>
                 </table>
+                @if ($expenses->hasPages())
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-zinc-700">
+
+                    <p class="text-sm text-zinc-400">
+                        Mostrando
+                        <span class="text-yellow-500 font-semibold">{{ $expenses->firstItem() }}</span>
+                        a
+                        <span class="text-yellow-500 font-semibold">{{ $expenses->lastItem() }}</span>
+                        de
+                        <span class="text-zinc-200 font-semibold">{{ $expenses->total() }}</span>
+                        egresos
+                    </p>
+
+                        <div class="flex items-center gap-2">
+
+                            {{-- Anterior --}}
+                            @if ($expenses->onFirstPage())
+                                <span class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-600 cursor-not-allowed">
+                                    <i class="fa-solid fa-angle-left"></i>
+                                </span>
+                            @else
+                                <a href="{{ $expenses->appends(request()->except('expenses_page'))->url($expenses->currentPage() - 1) }}"
+                                    class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:border-yellow-600 hover:text-yellow-500 transition">
+                                    <i class="fa-solid fa-angle-left"></i>
+                                </a>
+                            @endif
+
+                            {{-- Página actual --}}
+                            <span class="px-4 py-2 rounded-lg bg-yellow-600/20 border border-yellow-600/40 text-yellow-500 font-semibold">
+                                {{ $expenses->currentPage() }}
+                            </span>
+
+                            {{-- Siguiente --}}
+                            @if ($expenses->hasMorePages())
+                                <a href="{{ $expenses->appends(request()->except('expenses_page'))->url($expenses->currentPage() + 1) }}"
+                                    class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:border-yellow-600 hover:text-yellow-500 transition">
+                                    <i class="fa-solid fa-angle-right"></i>
+                                </a>
+                            @else
+                                <span class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-600 cursor-not-allowed">
+                                    <i class="fa-solid fa-angle-right"></i>
+                                </span>
+                            @endif
+
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
 

@@ -8,6 +8,7 @@ use App\Models\Sale;
 use App\Models\Expense;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class CashRegisterController extends Controller
 {
@@ -20,6 +21,7 @@ class CashRegisterController extends Controller
         $this->middleware('auth');
         $this->middleware(['role:admin'])->only(['store', 'destroy']);
     }
+
     public function index(Request $request)
     {
         $period = $request->input('period', 'daily');
@@ -34,33 +36,46 @@ class CashRegisterController extends Controller
 
         $end = now();
 
-        // Obtener todas las ventas del período
-        $sales = Sale::with(['saleDetails.product', 'services'])
-            ->whereBetween('created_at', [$start, $end])
-            ->get();
+        // Consultas base para las ventas del período.
+        $salesQuery = Sale::whereBetween('created_at', [$start, $end]);
 
-        // Calcular ingresos por productos y servicios
-        $productsIncome = $sales->flatMap->saleDetails
-            ->sum(fn($detail) => $detail->subtotal);
+        $expenseQuery = Expense::where('status', 'active')
+            ->whereBetween('expense_date', [
+                $start->toDateString(),
+                $end->toDateString(),
+            ]);
 
-        $servicesIncome = $sales->flatMap->services
-            ->sum(fn($service) => $service->pivot->price);
+        // Aplicar filtro de método de pago a los detalles.
+        if ($paymentMethod !== 'all') {
+            $salesQuery->where('payment_method', $paymentMethod);
+            $expenseQuery->where('payment_method', $paymentMethod);
+        }
+
+        // Totales generales: siempre consideran todo el período.
+        $periodSales = Sale::whereBetween('created_at', [$start, $end]);
+
+        $productsIncome = DB::table('sales_details')
+            ->join('sales', 'sales.id', '=', 'sales_details.sale_id')
+            ->whereBetween('sales.created_at', [$start, $end])
+            ->sum('sales_details.subtotal');
+
+        $servicesIncome = DB::table('sale_service')
+            ->join('sales', 'sales.id', '=', 'sale_service.sale_id')
+            ->whereBetween('sales.created_at', [$start, $end])
+            ->sum('sale_service.price');
 
         $totalIncome = $productsIncome + $servicesIncome;
 
-        // Obtener egresos activos del período
-        $expenses = Expense::where('status', 'active')
+        $totalExpenses = Expense::where('status', 'active')
             ->whereBetween('expense_date', [
                 $start->toDateString(),
                 $end->toDateString(),
             ])
-            ->get();
-
-        $totalExpenses = $expenses->sum('amount');
+            ->sum('amount');
 
         $cashBalance = $totalIncome - $totalExpenses;
 
-        // Métodos de pago disponibles
+        // Métodos de pago disponibles.
         $paymentMethods = [
             'Efectivo',
             'Transferencia',
@@ -68,22 +83,29 @@ class CashRegisterController extends Controller
             'En Línea',
         ];
 
-        // Calcular ingresos, egresos y saldo por método
+        // Resumen por método de pago.
         $paymentSummary = [];
 
         foreach ($paymentMethods as $method) {
+            $methodSales = (clone $periodSales)
+                ->where('payment_method', $method)
+                ->pluck('id');
 
-            $methodSales = $sales->where('payment_method', $method);
+            $methodProducts = DB::table('sales_details')
+                ->whereIn('sale_id', $methodSales)
+                ->sum('subtotal');
 
-            $methodProducts = $methodSales->flatMap->saleDetails
-                ->sum(fn($detail) => $detail->subtotal);
-
-            $methodServices = $methodSales->flatMap->services
-                ->sum(fn($service) => $service->pivot->price);
+            $methodServices = DB::table('sale_service')
+                ->whereIn('sale_id', $methodSales)
+                ->sum('price');
 
             $methodIncome = $methodProducts + $methodServices;
 
-            $methodExpenses = $expenses
+            $methodExpenses = Expense::where('status', 'active')
+                ->whereBetween('expense_date', [
+                    $start->toDateString(),
+                    $end->toDateString(),
+                ])
                 ->where('payment_method', $method)
                 ->sum('amount');
 
@@ -94,18 +116,23 @@ class CashRegisterController extends Controller
             ];
         }
 
-        // Filtrar los detalles si se seleccionó un método
-        $filteredSales = $paymentMethod === 'all'
-            ? $sales
-            : $sales->where('payment_method', $paymentMethod);
+        // Ventas paginadas.
+        $sales = (clone $salesQuery)
+            ->with(['saleDetails.product', 'services', 'user'])
+            ->orderByDesc('created_at')
+            ->paginate(10, ['*'], 'sales_page')
+            ->withQueryString();
 
-        $filteredExpenses = $paymentMethod === 'all'
-            ? $expenses
-            : $expenses->where('payment_method', $paymentMethod);
+        // Egresos paginados.
+        $expenses = (clone $expenseQuery)
+            ->with('user')
+            ->orderByDesc('expense_date')
+            ->paginate(10, ['*'], 'expenses_page')
+            ->withQueryString();
 
         return view('dashboard.admin.cash_register.index', [
-            'sales' => $filteredSales,
-            'expenses' => $filteredExpenses,
+            'sales' => $sales,
+            'expenses' => $expenses,
             'totalIncome' => $totalIncome,
             'totalProducts' => $productsIncome,
             'totalServices' => $servicesIncome,
@@ -116,6 +143,7 @@ class CashRegisterController extends Controller
             'paymentSummary' => $paymentSummary,
         ]);
     }
+
 
     public function closeCashRegister(Request $request)
     {

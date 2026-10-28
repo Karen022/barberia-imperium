@@ -12,7 +12,7 @@ class ExpenseController extends Controller
         $expenses = Expense::with('user')
             ->latest('expense_date')
             ->latest()
-            ->get();
+            ->paginate(10);
 
         return view('dashboard.admin.expenses.index', compact('expenses'));
     }

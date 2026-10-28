@@ -26,7 +26,7 @@ class UserController extends Controller
     public function clients()
     {
 
-        $clients = User::role('client')->get();
+        $clients = User::role('client')->paginate(10);
 
         return view('dashboard.clients.index', compact('clients'));
     }
@@ -34,7 +34,7 @@ class UserController extends Controller
     public function barbers()
     {
 
-        $barbers = User::role('barber')->get();
+        $barbers = User::role('barber')->paginate(10);
 
         return view('dashboard.admin.barbers.index', compact('barbers'));
     }
@@ -64,6 +64,8 @@ class UserController extends Controller
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
+
+        $validated['role'] = 'barber';
 
         $user = User::create($validated);
 

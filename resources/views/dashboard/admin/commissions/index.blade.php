@@ -12,14 +12,13 @@
             </div>
 
             <a href="{{ route('dashboard.commissions.payments.index') }}"
-            class="px-5 py-3 rounded-xl bg-zinc-700 text-white text-sm font-semibold hover:bg-zinc-600 transition text-center"
-            >
+                class="px-5 py-3 rounded-xl bg-zinc-700 text-white text-sm font-semibold hover:bg-zinc-600 transition text-center">
                 Historial de pagos
             </a>
         </div>
 
 
-        
+
 
         @if ($errors->any())
             <div class="mb-6 p-4 rounded-xl bg-red-900/30 border border-red-700 text-red-400">
@@ -57,23 +56,19 @@
                         class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-yellow-600">
                 </div>
 
-                <x-confirm-dialog
-                    title="Cerrar las comisiones de esta semana?"
+                <x-confirm-dialog title="Cerrar las comisiones de esta semana?"
                     message="Se generará la liquidación de comisiones para los barberos correspondientes. Verifica que todos los turnos de la semana estén correctamente registrados."
-                    confirmText="Cerrar semana"
-                    cancelText="Cancelar"
-                >
+                    confirmText="Cerrar semana" cancelText="Cancelar">
                     <x-slot:trigger>
-                        <span class="px-5 py-2 rounded-xl bg-yellow-600 hover:bg-yellow-500 text-black font-semibold transition inline-flex items-center justify-center cursor-">
+                        <span
+                            class="px-5 py-2 rounded-xl bg-yellow-600 hover:bg-yellow-500 text-black font-semibold transition inline-flex items-center justify-center cursor-">
                             Cerrar semana
                         </span>
                     </x-slot:trigger>
 
                     <x-slot:confirm>
-                        <button
-                            type="submit" 
-                            class="rounded-xl bg-yellow-600 hover:bg-yellow-500 px-4 py-2 text-sm font-semibold text-black transition"
-                        >
+                        <button type="submit"
+                            class="rounded-xl bg-yellow-600 hover:bg-yellow-500 px-4 py-2 text-sm font-semibold text-black transition">
                             Cerrar semana
                         </button>
                     </x-slot:confirm>
@@ -96,11 +91,11 @@
                         </div>
 
                         <span class="px-3 py-1 rounded-full text-sm w-fit
-                                {{  $period->status === 'closed'
-                                    ? 'bg-green-900/40 text-green-400'
-                                    : 'bg-yellow-900/400 text-yellow-400'
-                                }}
-                        ">
+                                        {{  $period->status === 'closed'
+                ? 'bg-green-900/40 text-green-400'
+                : 'bg-yellow-900/400 text-yellow-400'
+                                        }}
+                                ">
                             {{  $period->status === 'closed' ? 'Cerrada' : 'Abierta' }}
                         </span>
 
@@ -183,6 +178,8 @@
                                 @endforelse
                             </tbody>
                         </table>
+
+
                     </div>
                 </div>
             @empty
@@ -192,10 +189,55 @@
                     </p>
                 </div>
             @endforelse
+
+            @if ($periods->hasPages())
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-zinc-700">
+
+                    <p class="text-sm text-zinc-400">
+                        Mostrando
+                        <span class="text-yellow-500 font-semibold">{{ $periods->firstItem() }}</span>
+                        a
+                        <span class="text-yellow-500 font-semibold">{{ $periods->lastItem() }}</span>
+                        de
+                        <span class="text-zinc-200 font-semibold">{{ $periods->total() }}</span>
+                        períodos
+                    </p>
+
+                    <div class="flex items-center gap-2">
+
+                        @if ($periods->onFirstPage())
+                            <span class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-600 cursor-not-allowed">
+                                <i class="fa-solid fa-angle-left"></i>
+                            </span>
+                        @else
+                            <a href="{{ $periods->previousPageUrl() }}"
+                                class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:border-yellow-600 hover:text-yellow-500 transition">
+                                <i class="fa-solid fa-angle-left"></i>
+                            </a>
+                        @endif
+
+                        <span
+                            class="px-4 py-2 rounded-lg bg-yellow-600/20 border border-yellow-600/40 text-yellow-500 font-semibold">
+                            {{ $periods->currentPage() }}
+                        </span>
+
+                        @if ($periods->hasMorePages())
+                            <a href="{{ $periods->nextPageUrl() }}"
+                                class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:border-yellow-600 hover:text-yellow-500 transition">
+                                <i class="fa-solid fa-angle-right"></i>
+                            </a>
+                        @else
+                            <span class="px-3 py-2 rounded-lg border border-zinc-700 text-zinc-600 cursor-not-allowed">
+                                <i class="fa-solid fa-angle-right"></i>
+                            </span>
+                        @endif
+
+                    </div>
+                </div>
+            @endif
+
         </div>
 
-        <div class="mt-6">
-            {{ $periods->links() }}
-        </div>
+
     </div>
 @endsection

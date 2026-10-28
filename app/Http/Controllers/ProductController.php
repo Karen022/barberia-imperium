@@ -20,7 +20,7 @@ class ProductController extends Controller
     }
     public function index()
     {
-        $products = Product::orderBy('name')->get();
+        $products = Product::orderBy('name')->paginate(10);
         return view('dashboard.admin.products.index', compact('products'));
     }
 

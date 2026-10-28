@@ -27,7 +27,7 @@ Route::get('/services', [LandingController::class, 'services'])->name('landing.s
 Route::get('/contact', fn() => view('landing.contact'))->name('landing.contact');
 Route::get('/booking', fn() => view('landing.booking'))->name('landing.booking'); 
 Route::get('/products', [LandingController::class, 'products'])->name('landing.products');
-Route::post('/contact', [ContactController::class, 'send'])->name('landing.contact.send');
+Route::post('/contact', [ContactController::class, 'send'])->middleware('throttle:contact')->name('landing.contact.send');
 /*
 |--------------------------------------------------------------------------
 | Dashboard interno (requiere login)
@@ -95,15 +95,18 @@ Route::middleware('auth')->group(function () {
         ->name('landing.appointments.create');
 
     Route::post('/turnos', [ClientAppointmentController::class, 'store'])
+        ->middleware('throttle:appointment-booking')
         ->name('landing.appointments.store');
 
     Route::get('/turnos/slots', [ClientAppointmentController::class, 'availableSlots'])
+        ->middleware('throttle:appointment-slots')
         ->name('landing.appointments.slots');
 
     Route::get('/mis-turnos', [ClientAppointmentController::class, 'myAppointments'])
         ->name('landing.appointments.my');
 
     Route::patch('/turnos/{appointment}/cancel', [ClientAppointmentController::class, 'cancel'])
+        ->middleware('throttle:appointment-cancel')
         ->name('landing.appointments.cancel');
 });
 /*

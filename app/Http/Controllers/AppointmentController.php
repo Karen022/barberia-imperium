@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Sale;
 use App\Models\BarberUnavailability;
 use App\Services\CommissionService;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -27,10 +28,10 @@ class AppointmentController extends Controller
     public function index(Request $request)
     {
         $query = Appointment::with(['client', 'barber', 'services'])
-            ->orderBy('scheduled_at');
+            ->orderByDesc('scheduled_at');
 
         // Los barberos solo pueden ver sus propios turnos
-        if (auth()->user()->hasRole('barber')) {
+        if (auth()->user()->hasRole('barber') && !auth()->user()->hasRole('admin')) {
             $query->where('barber_id', auth()->id());
         }
 
@@ -43,7 +44,7 @@ class AppointmentController extends Controller
             $query->whereDate('scheduled_at', $request->date);
         }
 
-        $appointments = $query->get();
+        $appointments = $query->paginate(10)->withQueryString();
 
         $barbers = User::role('barber')->orderBy('name')->get();
 
@@ -93,7 +94,7 @@ class AppointmentController extends Controller
                 return back()->withErrors([
                     'scheduled_at' => 'No se pueden registrar turnos en una semana que ya fue liquidada.',
                 ])
-                ->withInput();
+                    ->withInput();
             }
             // Verificar horario bloqueado del barbero
             $hasUnavailability = BarberUnavailability::where(
@@ -195,6 +196,14 @@ class AppointmentController extends Controller
      */
     public function edit(Appointment $appointment)
     {
+        if (!auth()->user()->hasRole('admin')) {
+            abort_unless(
+                auth()->id() === $appointment->barber_id &&
+                $appointment->status === 'pending',
+                403
+            );
+        }
+
         return view('dashboard.appointments.edit', [
             'appointment' => $appointment,
             'clients' => User::role('client')->get(),
@@ -206,39 +215,92 @@ class AppointmentController extends Controller
     /**
      * Update the specified resource in storage.
      */
+
     public function update(Request $request, Appointment $appointment)
     {
+        if (!auth()->user()->hasRole('admin')) {
+            abort_unless(
+                auth()->id() === $appointment->barber_id &&
+                $appointment->status === 'pending',
+                403
+            );
+        }
         $validated = $request->validate([
             'client_id' => 'required|exists:users,id',
-            'barber_id' => 'required|exists:users,id',
+            'barber_id' => [
+                'required',
+                Rule::exists('users', 'id')->where('role', 'barber'),
+            ],
             'service_ids' => 'required|array|min:1',
             'service_ids.*' => 'integer|exists:services,id',
             'scheduled_at' => 'required|date_format:Y-m-d\TH:i',
-            'status' => 'required|in:pending,completed,cancelled',
         ]);
 
         try {
-            //  Obtener duración de los  servicios
+            // Obtener servicios actuales del turno.
+            $existingServices = $appointment->services()
+                ->get()
+                ->keyBy('id');
+
+            // Obtener servicios seleccionados.
             $services = Service::whereIn('id', $validated['service_ids'])->get();
-            $totalDuration = $services->sum('duration_min');
-            $start = Carbon::createFromFormat('Y-m-d\TH:i', $validated['scheduled_at']);
+
+            $totalDuration = $services->sum(function ($service) use ($existingServices) {
+                $existingService = $existingServices->get($service->id);
+
+                return $existingService ? $existingService->pivot->duration_min : $service->duration_min;
+            });
+
+            $start = Carbon::createFromFormat(
+                'Y-m-d\TH:i',
+                $validated['scheduled_at']
+            );
+
             $end = $start->copy()->addMinutes($totalDuration);
 
             $commissionService = app(CommissionService::class);
 
+            // Comprobar si la fecha original o nueva pertenece a una semana liquidada.
             if (
                 $commissionService->isDateInClosedPeriod(
-                    CArbon::parse($appointment->scheduled_at)
-                ) || 
+                    Carbon::parse($appointment->scheduled_at)
+                ) ||
                 $commissionService->isDateInClosedPeriod($start)
             ) {
                 return back()
                     ->withErrors([
                         'scheduled_at' => 'No se pueden modificar turnos pertenecientes a una semana que ya fue liquidada.',
-                    ])->withInput();
+                    ])
+                    ->withInput();
             }
-            // Comprobar solapamiento con otros turnos del mismo barbero
 
+            // Obtener venta asociada.
+            $sale = Sale::where('appointment_id', $appointment->id)
+                ->where('status', 'completed')
+                ->first();
+
+            if ($appointment->status === 'completed' && !$sale) {
+                return back()
+                    ->withErrors([
+                        'appointment' => 'No se encontró la venta asociada a este turno. No se puede realizar la modificación.',
+                    ])
+                    ->withInput();
+            }
+
+            // Impedir modificaciones si la venta ya tiene comisiones liquidadas.
+            if (
+                $appointment->status === 'completed' &&
+                $sale &&
+                $sale->commissionItems()->exists()
+            ) {
+                return back()
+                    ->withErrors([
+                        'appointment' => 'No se puede modificar este turno porque sus servicios ya fueron incluidos en una liquidación de comisiones.',
+                    ])
+                    ->withInput();
+            }
+
+            // Comprobar solapamiento con otros turnos del mismo barbero.
             $appointments = Appointment::with('services')
                 ->where('barber_id', $validated['barber_id'])
                 ->where('id', '!=', $appointment->id)
@@ -255,42 +317,68 @@ class AppointmentController extends Controller
                 $otherEnd = $otherStart->copy()
                     ->addMinutes($otherDuration);
 
-                // Comprobar si los horarios se superponen.
                 if ($start < $otherEnd && $end > $otherStart) {
                     return back()
                         ->withErrors([
-                            'scheduled_at' =>
-                                'El barbero ya tiene un turno agendado en ese horario.',
+                            'scheduled_at' => 'El barbero ya tiene un turno agendado en ese horario.',
                         ])
                         ->withInput();
                 }
             }
 
-            $appointment->update([
-                'client_id' => $validated['client_id'],
-                'barber_id' => $validated['barber_id'],
-                'scheduled_at' => $start->format('Y-m-d H:i:s'),
-                'status' => $validated['status'],
-            ]);
+            // Preparar servicios del turno conservando precios y duración históricos.
+            $appointmentServices = $services->mapWithKeys(function ($service) use ($existingServices) {
+                $existingService = $existingServices->get($service->id);
 
-            $appointment->services()->sync(
-                $services->mapWithKeys(function ($service) {
-                    return [
-                        $service->id => [
-                            'price' => $service->price,
-                            'duration_min' => $service->duration_min,
-                        ],
-                    ];
-                })->all()
-            );
+                return [
+                    $service->id => [
+                        'price' => $existingService
+                            ? $existingService->pivot->price
+                            : $service->price,
+
+                        'duration_min' => $existingService
+                            ? $existingService->pivot->duration_min
+                            : $service->duration_min,
+                    ],
+                ];
+            })->all();
+
+            // Preparar servicios de la venta conservando precios históricos.
+            $saleServices = $services->mapWithKeys(function ($service) use ($appointmentServices, $validated) {
+                return [
+                    $service->id => [
+                        'price' => $appointmentServices[$service->id]['price'],
+
+                        'performed_by' => $validated['barber_id'],
+                    ],
+                ];
+            })->all();
+
+            // Actualizar turno y venta dentro de una misma transacción.
+            DB::transaction(function () use ($appointment, $validated, $start, $appointmentServices, $sale, $saleServices) {
+                $appointment->update([
+                    'client_id' => $validated['client_id'],
+                    'barber_id' => $validated['barber_id'],
+                    'scheduled_at' => $start->format('Y-m-d H:i:s'),
+                ]);
+
+                $appointment->services()->sync($appointmentServices);
+
+                if ($appointment->status === 'completed') {
+                    $sale->services()->sync($saleServices);
+
+                    $sale->update([
+                        'client_id' => $validated['client_id'],
+                        'total' => collect($saleServices)->sum('price'),
+                    ]);
+                }
+            });
 
             return redirect()
                 ->route('dashboard.appointments.index')
                 ->with('success', 'Turno actualizado correctamente.');
 
-
         } catch (\Throwable $e) {
-
             Log::error('Error al actualizar el turno.', [
                 'appointment_id' => $appointment->id,
                 'message' => $e->getMessage(),
@@ -303,6 +391,7 @@ class AppointmentController extends Controller
                 ->with('error', 'No se pudo actualizar el turno. Inténtalo nuevamente.');
         }
     }
+
 
     public function updateStatus(Request $request, Appointment $appointment, string $status)
     {
@@ -325,7 +414,7 @@ class AppointmentController extends Controller
         // Validar el metodo de pago solo al completar el turno
         $paymentMethod = null;
 
-        if ($status === 'completed'){
+        if ($status === 'completed') {
             $validated = $request->validate([
                 'payment_method' => [
                     'required',
@@ -396,7 +485,7 @@ class AppointmentController extends Controller
             );
         } catch (\Throwable $e) {
 
-            Log::error('Error al actualizar el estaado del turno.', [
+            Log::error('Error al actualizar el estado del turno.', [
                 'appointment_id' => $appointment->id,
                 'status' => $status,
                 'user_id' => auth()->id(),
@@ -412,45 +501,45 @@ class AppointmentController extends Controller
     }
 
     public function updatePaymentMethod(Request $request, Appointment $appointment)
-{
-    // Verificar permisos
-    if (!auth()->user()->hasRole('admin') && auth()->id() !== $appointment->barber_id) {
-        abort(403);
+    {
+        // Verificar permisos
+        if (!auth()->user()->hasRole('admin') && auth()->id() !== $appointment->barber_id) {
+            abort(403);
+        }
+
+        // Dolo se puede cambiar el metodo de pago de turnos completados
+        if ($appointment->status !== 'completed') {
+            return back()->with(
+                'error',
+                'Solo puedes cambiar el método de pago de un turno completado.'
+            );
+        }
+
+        // Validar el nuevo metodo de pago
+        $validated = $request->validate([
+            'payment_method' => [
+                'required',
+                'string',
+                'in:Efectivo,Transferencia,QR',
+            ],
+        ]);
+
+        // Buscar la venta asociada al turno
+        $sale = Sale::where('appointment_id', $appointment->id)
+            ->where('status', 'completed')
+            ->first();
+
+        if (!$sale) {
+            return back()->with('error', 'No se encontró una venta asociada a este turno.');
+        }
+
+        // Actualizar exclusivamente el metodo de pago
+        $sale->update([
+            'payment_method' => $validated['payment_method'],
+        ]);
+
+        return back()->with('success', 'Método de pago actualizado correctamente.');
     }
-
-    // Dolo se puede cambiar el metodo de pago de turnos completados
-    if ($appointment->status !== 'completed') {
-        return back()->with(
-            'error',
-            'Solo puedes cambiar el método de pago de un turno completado.'
-        );
-    }
-
-    // Validar el nuevo metodo de pago
-    $validated = $request->validate([
-        'payment_method' => [
-            'required',
-            'string',
-            'in:Efectivo,Transferencia,QR',
-        ],
-    ]);
-
-    // Buscar la venta asociada al turno
-    $sale = Sale::where('appointment_id', $appointment->id)
-        ->where('status', 'completed')
-        ->first();
-
-    if (!$sale) {
-        return back()->with('error', 'No se encontró una venta asociada a este turno.');
-    }
-
-    // Actualizar exclusivamente el metodo de pago
-    $sale->update([
-        'payment_method' => $validated['payment_method'],
-    ]);
-
-    return back()->with('success', 'Método de pago actualizado correctamente.');
-}
 
     public function storeUnavailability(Request $request)
     {
