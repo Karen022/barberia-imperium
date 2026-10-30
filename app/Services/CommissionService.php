@@ -59,68 +59,9 @@ class CommissionService
     {
         return DB::transaction(function () use ($date, $closedBy) {
 
-            // 1. Determinar el lunes y sábado de la semana.
-             $startDate = $date->copy()->startOfWeek(Carbon::MONDAY);
-             $endDate = $startDate->copy()->addDays(5);
-
-            // $saturdayStart = $endDate->copy()->startOfDay();
-            // $saturdayEnd = $endDate->copy()->endOfDay();
-            // $now = Carbon::now();
-
-            // // Solo se permite cerrar la semana el sabado correspondient
-            // if (!$now->isSaturday() || !$now->isSameDay($endDate)) {
-            //     throw new RuntimeException(
-            //         'El cierre de comisiones solo esta permitido el sábado de esa semana.'
-            //     );
-            // }
-
-            // // Obtener el ultimo turno del sabado
-            // $saturdayAppointments = Appointment::with('services')
-            //     ->whereBetween('scheduled_at', [
-            //         $saturdayStart,
-            //         $saturdayEnd,
-            // ])
-            // ->where('status', '!=', 'cancelled')
-            // ->get();
-
-            // if ($saturdayAppointments->isEmpty()) {
-            //     throw new RuntimeException(
-            //         'No existen turnos registrados para este sábado.'
-            //     );
-            // }
-
-            // $lastAppointmentEnd = $saturdayAppointments
-            //     ->map(function ($appointment) {
-
-            //         if ($appointment->services->isEmpty()) {
-            //             throw new RuntimeException(
-            //                 'Existe el turno del sábado sin servicios asociados'
-            //             );
-            //         }
-
-            //          if ($appointment->services->contains(
-            //             fn ($service) => $service->pivot->duration_min === null
-            //          )) {
-            //             throw new RuntimeException(
-            //                 'Existe un turno el sabado sin duracion registrada en sus servicios.'
-            //             );
-            //          }
-
-            //         $duration = $appointment->services->sum(
-            //             fn ($service) => $service->pivot->duration_min
-            //         );
-
-            //         return $appointment->scheduled_at->copy()
-            //             ->addMinutes($duration);
-            //     })
-            //     ->max();
-
-            // if ($now->lt($lastAppointmentEnd)) {
-            //     throw new RuntimeException(
-            //         'Todavía no ha finalizado el último turno programado del sábado.'
-            //     );
-            // }
-
+            // Determinar el lunes y sábado de la semana.
+            $startDate = $date->copy()->startOfWeek(Carbon::SUNDAY);
+            $endDate = $startDate->copy()->addDays(6);
 
             $now = Carbon::now();
 
@@ -189,7 +130,7 @@ class CommissionService
 
 
 
-            // 2. Comprobar si el período ya fue cerrado.
+            //  Comprobar si el período ya fue cerrado.
             $existingPeriod = DB::table('commission_periods')
                 ->whereDate('start_date', $startDate->toDateString())
                 ->lockForUpdate()
@@ -201,7 +142,7 @@ class CommissionService
                 );
             }
 
-            // 3.Comprobar que no queden turnos pendientes de atención.
+            // Comprobar que no queden turnos pendientes de atención.
             $pendingAppointments = DB::table('appointments')
                 ->where('status', 'pending')
                 ->whereBetween('scheduled_at', [
@@ -216,7 +157,7 @@ class CommissionService
                 );
             }
 
-            // 4. Obtener los servicios realizados durante la semana.
+            //  Obtener los servicios realizados durante la semana.
             $services = $this->getServicesForPeriod(
                 $startDate,
                 $endDate
@@ -228,7 +169,7 @@ class CommissionService
                 );
             }
 
-            // 5. Comprobar que ningún servicio haya sido liquidado anteriormente.
+            // Comprobar que ningún servicio haya sido liquidado anteriormente.
             $sourceIds = $services->pluck('source_id');
 
             $alreadyLiquidated = DB::table('commission_items')
@@ -242,7 +183,7 @@ class CommissionService
                 );
             }
 
-            // 6. Crear el período semanal.
+            //  Crear el período semanal.
             $periodId = DB::table('commission_periods')->insertGetId([
                 'start_date' => $startDate->toDateString(),
                 'end_date' => $endDate->toDateString(),
@@ -253,7 +194,7 @@ class CommissionService
                 'updated_at' => now(),
             ]);
 
-            // 7. Agrupar los servicios por barbero.
+            //  Agrupar los servicios por barbero.
             $servicesByBarber = $services->groupBy('barber_id');
 
             foreach ($servicesByBarber as $barberId => $barberServices) {
@@ -269,7 +210,7 @@ class CommissionService
 
                 $shopAmount = $servicesTotal - $barberAmount;
 
-                // 8. Crear la liquidación del barbero.
+                //  Crear la liquidación del barbero.
                 $commissionId = DB::table('barber_commissions')->insertGetId([
                     'commission_period_id' => $periodId,
                     'barber_id' => $barberId,
@@ -282,7 +223,7 @@ class CommissionService
                     'updated_at' => now(),
                 ]);
 
-                // 9. Registrar cada servicio como un concepto de comisión.
+                //  Registrar cada servicio como un concepto de comisión.
                 foreach ($barberServices as $service) {
                     DB::table('commission_items')->insert([
                         'barber_commission_id' => $commissionId,
@@ -299,7 +240,7 @@ class CommissionService
                 }
             }
 
-            // 10. Marcar el período como cerrado.
+            //  Marcar el período como cerrado.
             DB::table('commission_periods')->where('id', $periodId)->update([
                 'status' => 'closed',
                 'closed_at' => now(),
@@ -307,7 +248,7 @@ class CommissionService
                 'updated_at' => now(),
             ]);
 
-            // 11. Devolver el período creado.
+            //  Devolver el período creado.
             return DB::table('commission_periods')
                 ->where('id', $periodId)
                 ->first();
