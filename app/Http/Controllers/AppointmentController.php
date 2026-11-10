@@ -227,14 +227,19 @@ class AppointmentController extends Controller
         }
         $validated = $request->validate([
             'client_id' => 'required|exists:users,id',
-            'barber_id' => [
-                'required',
-                Rule::exists('users', 'id')->where('role', 'barber'),
-            ],
+            'barber_id' => 'required|exists:users,id',
             'service_ids' => 'required|array|min:1',
             'service_ids.*' => 'integer|exists:services,id',
             'scheduled_at' => 'required|date_format:Y-m-d\TH:i',
         ]);
+
+        $barber = User::role('barber')->find($validated['barber_id']);
+
+        if (!$barber) {
+            return back()->withErrors([
+                'barber_id' => 'El barbero seleccionado no es válido.',
+            ])->withInput();
+        }
 
         try {
             // Obtener servicios actuales del turno.
